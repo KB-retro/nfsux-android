@@ -15,6 +15,11 @@ val localSettings = Properties().apply {
 val xbe = providers.gradleProperty("nfsu.xbe")
     .orElse(provider { localSettings.getProperty("nfsu.xbe", "game/Need For Speed Underground/default.xbe") })
     .map { repository.resolve(it) }
+// Keep compiler experiments reproducible through the normal Gradle entry point.
+val generatedOptimization = providers.gradleProperty("nfsu.genOpt").orElse("-O1")
+require(generatedOptimization.get() in listOf("-O1", "-O2", "-O3")) {
+    "nfsu.genOpt must be -O1, -O2 or -O3"
+}
 val pythonCommand = providers.gradleProperty("nfsu.python").orElse("python3")
 val pythonHome = layout.buildDirectory.dir("recomp-python")
 val python = pythonHome.map { it.file(if (System.getProperty("os.name").startsWith("Windows")) "Scripts/python.exe" else "bin/python").asFile }
@@ -129,7 +134,8 @@ android {
         externalNativeBuild {
             cmake {
                 arguments += listOf("-DNFSU2_VULKAN=ON", "-DANDROID_STL=c++_shared",
-                    "-DNFSU2_GEN_DIR=${generatedCode.get().asFile.absolutePath}")
+                    "-DNFSU2_GEN_DIR=${generatedCode.get().asFile.absolutePath}",
+                    "-DNFSU2_GEN_OPT=${generatedOptimization.get()}")
                 targets += listOf("nfsu2_recomp", "SDL2")
             }
         }
