@@ -3322,12 +3322,14 @@ typedef struct {
 extern uint8_t *nv2a_pb_reg_dirty(void);
 static uint32_t s_regs_seen[0x2000 / 4];    /* registers as of the last draw */
 
+static uint32_t s_st_reg_scans;
 /* Did a register a draw depends on change since the last draw? */
 static int regs_changed(const uint32_t *r)
 {
     uint8_t *dirty = nv2a_pb_reg_dirty();
     uint32_t blk, w;
     int changed = 0;
+    s_st_reg_scans++;
 
     for (blk = 0; blk < 0x2000 / 64; blk++) {
         if (!dirty[blk])
@@ -3515,7 +3517,11 @@ static void vk_draw_raw_impl(const Nv2aRawBatch *b)
                 s_inst_on ? "on" : "off", s_ubo_range, (unsigned)s_ubo_align);
     }
     s_st_draws++;
-    {
+    /* The register shadow is used only to validate an instanced append.
+     * With instancing disabled no consumer needs it. Dirty bits accumulate;
+     * the next enabled draw refreshes the shadow before it can hold a run.
+     * This also preserves the every-other-frame diagnostic mode. */
+    if (s_inst_on) {
         int changed = regs_changed(r);
         if (pend_append(b, changed))
             return;
@@ -4211,11 +4217,18 @@ static void vk_flip_impl(void)
         if (st < 0) {
             const char *e = getenv("RECOMP_DRAW_STATS");
             st = e && *e == '1';
+#ifdef __ANDROID__
+            char property[PROP_VALUE_MAX] = {0};
+            if (!e && __system_property_get("debug.nfsu.draw_stats", property) > 0)
+                st = !strcmp(property, "1");
+#endif
         }
         if (st && s_frame - st_frame >= 300) {
-            NFS_LOG_DEBUG("graphics", "[vk] per frame: %u draws -> %u draw calls (%u instances appended, %u constant sets reused)\n",
+            NFS_LOG_DEBUG("graphics", "[vk] per frame: %u draws -> %u draw calls (%u instances appended, %u constant sets reused, %u register scans)\n",
                     s_st_draws / (s_frame - st_frame), s_st_calls / (s_frame - st_frame),
-                    s_st_inst / (s_frame - st_frame), s_st_creuse / (s_frame - st_frame));
+                    s_st_inst / (s_frame - st_frame), s_st_creuse / (s_frame - st_frame),
+                    s_st_reg_scans / (s_frame - st_frame));
+            s_st_reg_scans = 0;
             s_st_draws = s_st_calls = s_st_inst = s_st_creuse = 0;
             st_frame = s_frame;
         }
