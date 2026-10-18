@@ -66,6 +66,10 @@
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/resource_limits_c.h>
 
+#ifdef __ANDROID__
+#include <sys/system_properties.h>
+#include "texture_decode_pool.h"
+#endif
 #include <pthread.h>
 #ifdef __ANDROID__
 #include <unistd.h>
@@ -102,6 +106,18 @@ static uint64_t hz_now(void)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+}
+
+/* Renderer-owned wall timings, also attached to the individual hitch.
+ * Vulkan stages measure host work/recording, not GPU execution timestamps. */
+static uint64_t s_hz_tex_stage[NFSU_PERF_TEX_WORKER_COPY - NFSU_PERF_TEX_HASH + 1];
+static void tex_perf_end(int metric, uint64_t start)
+{
+    if (!start) return;
+    uint64_t now = hz_now();
+    uint64_t elapsed = now >= start ? now - start : 0;
+    s_hz_tex_stage[metric - NFSU_PERF_TEX_HASH] += elapsed;
+    nfsu_perf_add(metric, elapsed);
 }
 
 /* ── Device ───────────────────────────────────────────────────────── */
@@ -956,6 +972,7 @@ static void tex_copy_from_ring(VkTex *t, VkDeviceSize at, uint32_t row_texels,
                                uint32_t layer, uint32_t level)
 {
     VkBufferImageCopy rg;
+    uint64_t perf_upload = nfsu_perf_begin();
 
     end_rendering();
     if (!level)
@@ -971,6 +988,7 @@ static void tex_copy_from_ring(VkTex *t, VkDeviceSize at, uint32_t row_texels,
     rg.imageExtent.height = t->h >> level ? t->h >> level : 1;
     rg.imageExtent.depth = 1;
     vkCmdCopyBufferToImage(s_cb, s_f->ring, t->image, VK_IMAGE_LAYOUT_GENERAL, 1, &rg);
+    tex_perf_end(NFSU_PERF_TEX_UPLOAD, perf_upload);
 }
 
 /* Copy `bytes` at `src` (row length `row_texels`, 0 = tight) into the image. */
@@ -978,11 +996,15 @@ static void tex_upload(VkTex *t, const void *src, uint32_t bytes, uint32_t row_t
                        uint32_t layer, uint32_t level)
 {
     void *dst;
+    uint64_t perf_staging = nfsu_perf_begin();
     VkDeviceSize at = ring_alloc(bytes, 16, &dst);
+    tex_perf_end(NFSU_PERF_TEX_STAGING, perf_staging);
 
     if (!dst)
         return;
+    uint64_t perf_upload = nfsu_perf_begin();
     memcpy(dst, src, bytes);
+    tex_perf_end(NFSU_PERF_TEX_UPLOAD, perf_upload);
     tex_copy_from_ring(t, at, row_texels, layer, level);
 }
 
@@ -1042,6 +1064,53 @@ static uint32_t cube_face_bytes(uint32_t color, uint32_t w, uint32_t h, uint32_t
     return (n + 127) & ~127u;
 }
 
+#ifdef __ANDROID__
+/* CPU-only pool owned by the renderer pthread, independent of presentation
+ * surfaces. Every texture drains its job before returning. */
+static TextureDecodePool *s_texture_decode_pool;
+static pthread_key_t s_texture_pool_key;
+static void texture_workers_destroy(void *pool)
+{
+    texture_decode_pool_destroy(pool);
+    s_texture_decode_pool = NULL;
+}
+static int texture_workers_begin(const uint8_t *source, uint32_t format,
+                                  uint32_t width, uint32_t height)
+{
+    if ((size_t)width * height < 65536 || height < 8) return 0;
+    static int mode = -1, failed;
+    if (mode < 0) {
+        char property[PROP_VALUE_MAX] = {0};
+        const char *value = getenv("RECOMP_VK_TEX_WORKERS");
+        if (!value && __system_property_get("debug.nfsu.tex_workers", property) > 0)
+            value = property;
+        mode = value && !strcmp(value, "2") ? 2 : 0;
+        NFS_LOG_INFO("graphics", "[TEXWORK] workers=%d (experimental, restart to change)\n", mode);
+    }
+    if (!mode || failed) return 0;
+    if (!s_texture_decode_pool) {
+        if (pthread_key_create(&s_texture_pool_key, texture_workers_destroy)) {
+            failed = 1;
+            return 0;
+        }
+        s_texture_decode_pool = texture_decode_pool_create();
+        if (!s_texture_decode_pool) {
+            failed = 1;
+            NFS_LOG_WARN("graphics", "[TEXWORK] cannot create pool; using synchronous decode\n");
+            pthread_key_delete(s_texture_pool_key);
+            return 0;
+        }
+        if (pthread_setspecific(s_texture_pool_key, s_texture_decode_pool)) {
+            texture_workers_destroy(s_texture_decode_pool);
+            pthread_key_delete(s_texture_pool_key);
+            failed = 1;
+            return 0;
+        }
+    }
+    return texture_decode_pool_begin(s_texture_decode_pool, source, format, width, height);
+}
+#endif
+
 /* One 2D image (layer 0) or cube face from guest memory at va. */
 static void tex_fill(VkTex *t, uint32_t va, uint32_t layer)
 {
@@ -1068,11 +1137,38 @@ static void tex_fill(VkTex *t, uint32_t va, uint32_t layer)
         tex_upload(t, mem + va, pitch * (h - 1) + w * 4, pitch / 4, layer, 0);
         return;
     }
-    /* Everything else is decoded straight into the upload ring. */
+    /* Workers own a snapshot and CPU output, never upload-ring storage. */
+#ifdef __ANDROID__
+    int parallel = (color == 0x0C || color == 0x0E || color == 0x0F)
+        && texture_workers_begin(mem + va, color, w, h);
+#endif
+    uint64_t perf_staging = nfsu_perf_begin();
     at = ring_alloc(w * h * 4, 16, &map);
+    tex_perf_end(NFSU_PERF_TEX_STAGING, perf_staging);
     px = (uint32_t *)map;
+#ifdef __ANDROID__
+    if (parallel) {
+        TextureDecodeTiming timing;
+        const uint32_t *decoded = texture_decode_pool_finish(s_texture_decode_pool, &timing);
+        if (nfsu_perf_begin()) {
+            nfsu_perf_add(NFSU_PERF_TEX_SNAPSHOT, timing.snapshot_ns);
+            nfsu_perf_add(NFSU_PERF_TEX_WORKER_WAIT, timing.wait_ns);
+            nfsu_perf_add(NFSU_PERF_TEX_WORKER_CPU, timing.worker_cpu_ns);
+            s_hz_tex_stage[7] += timing.snapshot_ns;
+            s_hz_tex_stage[8] += timing.wait_ns;
+            s_hz_tex_stage[9] += timing.worker_cpu_ns;
+        }
+        if (!px) return; /* Job drained even if the ring allocation failed. */
+        uint64_t perf_copy = nfsu_perf_begin();
+        memcpy(px, decoded, (size_t)w * h * sizeof(*px));
+        tex_perf_end(NFSU_PERF_TEX_WORKER_COPY, perf_copy);
+        tex_copy_from_ring(t, at, 0, layer, 0);
+        return;
+    }
+#endif
     if (!px)
         return;
+    uint64_t perf_decode = nfsu_perf_begin();
     if (color == 0x06 || color == 0x07) {
         const uint32_t *src = (const uint32_t *)(mem + va);
         uint32_t x, y, fill = color == 0x07 ? 0xFF000000u : 0;
@@ -1098,6 +1194,8 @@ static void tex_fill(VkTex *t, uint32_t va, uint32_t layer)
                 NFS_LOG_WARN("graphics", "  [VK] " "texture 0x%08X format 0x%02X not decodable\n", va, color);
         }
     }
+    tex_perf_end(color == 0x0C || color == 0x0E || color == 0x0F
+                 ? NFSU_PERF_TEX_DXT : NFSU_PERF_TEX_DECODE, perf_decode);
     tex_copy_from_ring(t, at, 0, layer, 0);
 }
 
@@ -1123,9 +1221,11 @@ static VkImageView tex_get(uint32_t va, uint32_t color, uint32_t w, uint32_t h, 
         t->used = s_frame;
         return t->view;
     }
+    uint64_t perf_hash = nfsu_perf_begin();
     hash = bytes_hash(va, face ? face * 6 : tex_bytes(color, w, h, pitch));
     if (color == 0x0B)
         hash ^= bytes_hash(s_palette_va, 1024) * 31u;
+    tex_perf_end(NFSU_PERF_TEX_HASH, perf_hash);
     if (t && t->hash == hash) {
         t->used = t->checked = s_frame;
         return t->view;
@@ -1157,10 +1257,13 @@ static VkImageView tex_get(uint32_t va, uint32_t color, uint32_t w, uint32_t h, 
         t->face = face; t->levels = levels;
         VT("texture %08X fmt %02X %ux%u pitch %u%s\n", va, color, w, h, pitch,
            face ? " cube" : "");
-        if (!make_image_ml(w, h, layers, levels, fmt,
+        uint64_t perf_image = nfsu_perf_begin();
+        int made = make_image_ml(w, h, layers, levels, fmt,
                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                           VK_IMAGE_ASPECT_COLOR_BIT, &t->image, &t->view, &t->mem)) {
+                           VK_IMAGE_ASPECT_COLOR_BIT, &t->image, &t->view, &t->mem);
+        tex_perf_end(NFSU_PERF_TEX_IMAGE, perf_image);
+        if (!made) {
             memset(t, 0, sizeof *t);
             return face ? s_dummy_cube_view : s_dummy_view;
         }
@@ -1174,8 +1277,11 @@ static VkImageView tex_get(uint32_t va, uint32_t color, uint32_t w, uint32_t h, 
 
     for (f = 0; f < layers; f++)
         tex_fill(t, va + f * face, f);
-    if (fmt == VK_FORMAT_B8G8R8A8_UNORM && levels > 1)
+    if (fmt == VK_FORMAT_B8G8R8A8_UNORM && levels > 1) {
+        uint64_t perf_mips = nfsu_perf_begin();
         gen_mips(t->image, w, h, levels, layers);
+        tex_perf_end(NFSU_PERF_TEX_MIPS, perf_mips);
+    }
     size = fmt != VK_FORMAT_B8G8R8A8_UNORM ? tex_bytes(color, w, h, 0) : w * h * 4;
     if (levels > 1)
         size += size / 3;                   /* the mip chain */
@@ -4121,12 +4227,21 @@ static void vk_flip_impl(void)
         if (last_ns) {
             uint64_t dt = now - last_ns;
             if (now - window_ns > 10000000000ull) { window_ns = now; lines = 0; }
-            if (dt > 50000000ull && lines++ < 30)
+            if (dt > 50000000ull && lines++ < 30) {
                 NFS_LOG_DEBUG("graphics", "[hitch] frame %u: %.0f ms -- %u programs compiled (%.0f ms),"
                         " %u textures %.1f MB (%.0f ms), %u draws\n", s_frame, dt / 1e6,
                         s_hz_progs, s_hz_prog_ns / 1e6, s_hz_texs,
                         s_hz_tex_bytes / 1048576.0, s_hz_tex_ns / 1e6, s_hz_draws);
+                NFS_LOG_DEBUG("graphics", "[texstage] frame %u: hash=%.2f image=%.2f staging=%.2f decode=%.2f dxt=%.2f upload=%.2f mips=%.2f snapshot=%.2f worker_wait=%.2f worker_cpu=%.2f worker_copy=%.2f ms\n",
+                    s_frame, s_hz_tex_stage[0] / 1e6, s_hz_tex_stage[1] / 1e6,
+                    s_hz_tex_stage[2] / 1e6, s_hz_tex_stage[3] / 1e6,
+                    s_hz_tex_stage[4] / 1e6, s_hz_tex_stage[5] / 1e6,
+                    s_hz_tex_stage[6] / 1e6, s_hz_tex_stage[7] / 1e6,
+                    s_hz_tex_stage[8] / 1e6, s_hz_tex_stage[9] / 1e6,
+                    s_hz_tex_stage[10] / 1e6);
+            }
         }
+        memset(s_hz_tex_stage, 0, sizeof s_hz_tex_stage);
         last_ns = now;
         s_hz_progs = s_hz_texs = s_hz_draws = 0;
         s_hz_prog_ns = s_hz_tex_ns = s_hz_tex_bytes = 0;
