@@ -28,6 +28,12 @@ int xgf_yield(void);
 /* Cooperative safe-point query: higher priority ready work, self suspension,
  * or an equal-priority peer after the shared 1 ms slice. */
 int xgf_should_preempt(void);
+/* Bridge safe-point query, including guest GIL/ISR/dispatch guards. NATIVE
+ * asks the bridge to use its existing native-thread scheduling path. */
+typedef enum {
+    XGF_PREEMPT_NATIVE, XGF_PREEMPT_STAY, XGF_PREEMPT_YIELD
+} XgfPreemptStatus;
+XgfPreemptStatus xgf_preempt_status(void);
 /* Synchronous host call on the pthread's original stack (e.g. ART/JNI).
  * No guest scheduling/context switch occurs. Callback must not park/yield.
  * Zero means already on a native stack; caller executes its normal path. */

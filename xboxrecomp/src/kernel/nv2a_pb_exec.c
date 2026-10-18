@@ -36,6 +36,7 @@
 /* The swizzle decoder the D3D8 layer already uses -- one implementation of
  * Morton order, not a second one that can disagree with it. */
 #include "../d3d/d3d8_swizzle.h"
+#include "../d3d/d3d8_dxt.h"
 #include "nv2a_backend.h"
 
 extern ptrdiff_t xbox_GetMemoryOffset(void);
@@ -1028,6 +1029,10 @@ int nv2a_backend_decode_texture(const Nv2aTexture *tex, uint32_t *argb_out)
                         tex->color, tex->width, tex->height, tex->pitch, seen[k].n);
         }
     }
+
+    if (d3d8_format_dxt_block_bytes(tex->color))
+        return d3d8_dxt_decode_image((const uint8_t *)xbox_GetMemoryOffset() + tex->offset,
+                                     tex->color, tex->width, tex->height, argb_out);
 
     /* Linear 32-bit ARGB is already the output layout: copy rows, not
      * texels. A movie frame is one of these every frame. */

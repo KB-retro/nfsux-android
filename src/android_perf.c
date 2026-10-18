@@ -98,7 +98,10 @@ void nfsu_perf_poll(void)
         "gil_wait", "gil_held", "apu_wait", "apu_work", "vk_draw", "vk_flip",
         "vk_fence", "vk_acquire", "vk_submit", "vk_present", "pb_work",
         "gil_cs", "gil_queue", "gil_handoff",
-        "spin_wait", "spin_total", "preempt_wait", "preempt_total"
+        "spin_wait", "spin_total", "preempt_wait", "preempt_total",
+        "tex_hash", "tex_image", "tex_staging", "tex_decode", "tex_dxt",
+        "tex_upload", "tex_mips", "tex_snapshot", "tex_worker_wait",
+        "tex_worker_cpu", "tex_worker_copy"
     };
     if (!nfsu_perf_enabled || !perf.window) return;
     uint64_t now = perf_clock(CLOCK_MONOTONIC);

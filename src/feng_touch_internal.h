@@ -2,10 +2,24 @@
 #define NFSU_FENG_TOUCH_INTERNAL_H
 /* Private guest-side adapter contract. Public hooks remain in feng_touch.h. */
 #include <stdint.h>
+#include <stddef.h>
+/* FEng allocations live in normal RAM or its cached kernel mirror. Reject
+ * overflow, MMIO and poison addresses before dereferencing optional UI data. */
+extern size_t g_xbox_total_ram, g_xbox_map_size;
+static inline int touch_guest_range(uint32_t address, size_t bytes)
+{
+    size_t size = g_xbox_map_size ? g_xbox_map_size : g_xbox_total_ram;
+    uint32_t bank = address & 0xF0000000u;
+    uint32_t offset = address & 0x7FFFFFFFu;
+    return address && (bank == 0 || bank == 0x80000000u) &&
+        offset < size && bytes <= size - offset;
+}
 #include "touch_gesture.h"
 #include "touch_geometry.h"
 typedef struct {
     uint32_t package, target, message, screen;
+    uint64_t generation;
+    uint32_t objects, object_count, target_hash;
     uint32_t palette_entry, palette_channel, palette_part, list_entry;
     uint32_t magazine_slot, magazine_page;
     unsigned back, screen_control, carousel;

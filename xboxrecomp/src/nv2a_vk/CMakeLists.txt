@@ -18,6 +18,7 @@ endif()
 target_link_libraries(xbox_nv2a_vk PUBLIC glslang::glslang glslang::glslang-default-resource-limits)
 
 if(ANDROID)
+    target_sources(xbox_nv2a_vk PRIVATE texture_decode_pool.c)
     target_link_libraries(xbox_nv2a_vk PUBLIC vulkan SDL2::SDL2)
 elseif(NINTENDO_SWITCH)
     set(NVK_SDK "" CACHE PATH "mesa-switch install prefix (holds lib/libvulkan.a, include/vulkan)")
