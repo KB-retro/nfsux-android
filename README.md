@@ -4,10 +4,9 @@
 
 ### Recompilación estática de Xbox para Android
 
-Proyecto derivado de [nfsu1-android](https://github.com/cherepavel/nfsu1-android)
-de cherepavel: la versión original de Xbox (NTSC-U) de *Need for Speed:
-Underground*, traducida instrucción a instrucción a C y ejecutada de forma
-nativa en Android, sin emulador.
+La versión original de Xbox (NTSC-U) de *Need for Speed: Underground*,
+traducida instrucción a instrucción a C y ejecutada de forma nativa en Android,
+sin emulador.
 
 </div>
 
@@ -16,9 +15,7 @@ nativa en Android, sin emulador.
 > El repositorio no incluye datos ni ejecutables del juego: necesitas tu propia
 > copia original de Xbox (NTSC-U).
 
-## Novedades de NFSU-X Carrerillas
-
-Además de todo lo que ya hace el port original:
+## Funciones
 
 - **Traducción al español** del launcher, los ajustes y el editor de controles
   táctiles (también en inglés y ruso; sigue el idioma del sistema).
@@ -32,12 +29,15 @@ Además de todo lo que ya hace el port original:
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de
   la carrera y opciones en un `.zip`.
-- **Jugar / Ajustes / Cambiar carpeta** al abrir la app, en lugar de arrancar
-  el juego directamente.
+- **Jugar / Ajustes / Cambiar carpeta** al abrir la app.
 - Aviso claro si la carpeta tiene otra versión del juego (por ejemplo PAL).
 - Nombre, logo e icono propios.
 
-Detalles técnicos en [android/README.md](android/README.md).
+- Controles táctiles personalizables en carrera, menús táctiles, vibración y
+  compatibilidad con mandos.
+- Renderizado Vulkan con panorámico 16:9, reflejos en los coches, mipmaps y FXAA.
+
+Detalles técnicos (en inglés) en [android/README.md](android/README.md).
 
 ## Créditos
 
@@ -49,106 +49,123 @@ Detalles técnicos en [android/README.md](android/README.md).
 - Toolkit de recompilación: [xboxrecomp](xboxrecomp/).
 - NFSU-X Carrerillas: [KB-retro](https://github.com/KB-retro).
 
-## Build for Android
+## Instalación
 
-The commands below are for Linux. The APK targets **ARM64**, Android 11 or
-newer (API 30+).
+1. Necesitas un móvil o consola Android **ARM64** con **Android 11 o superior**.
+2. Descarga la APK (ver [Compilar con GitHub Actions](#compilar-con-github-actions))
+   e instálala. Si Android lo pide, permite instalar apps de origen desconocido.
+3. Copia en el móvil la carpeta del juego **extraída** de tu disco original de
+   Xbox **NTSC-U (USA)**: debe contener `default.xbe`, `CARS`, `FRONTEND`,
+   `GLOBAL`, `LANGUAGES`, `MOVIES`, `SOUND` y `TRACKS`. Puede estar en la
+   memoria interna, una tarjeta SD o un USB. No se admite la ISO sin extraer.
+4. Abre **NFSU-X Carrerillas**, pulsa **Seleccionar carpeta**, elige esa
+   carpeta y concede el acceso de lectura.
+5. Pulsa **Jugar**. En **Ajustes** puedes cambiar gráficos, sonido, idioma,
+   el contador de FPS y hacer copias de seguridad de tus partidas.
 
-### Requirements
+La carpeta del juego se lee directamente y no se copia dentro de la app:
+mantenla disponible mientras juegas. Las partidas, ajustes y registros se
+guardan en `Android/data/org.nfsu.android/files/`.
 
-- Git, Python 3 with `venv` and `pip`, and JDK 21 or newer.
-- Android SDK with platform **37**, NDK **30.0.16248370**, and CMake **4.1.2**.
-  Install these through Android Studio's SDK Manager or `sdkmanager`.
-- The supported original Xbox **NTSC-U** `default.xbe` from your own game copy.
-  Game data is not included in the repository or APK.
+Al actualizar a una APK nueva, normalmente se instala encima. Si Android no lo
+permite (la firma puede cambiar entre compilaciones), exporta antes las
+partidas en **Ajustes → Exportar partidas**, desinstala, instala la nueva e
+impórtalas.
 
-Gradle **9.8.0** is downloaded by the wrapper; Android Gradle Plugin **9.4.1**
-is configured in the project. Run the build from a Git checkout: the launcher
-displays the current commit as its build identifier.
+## Compilar con GitHub Actions
 
-### Prepare and build
+La forma más sencilla de obtener la APK, sin instalar nada en tu ordenador:
 
-From the repository root, initialize the pinned source dependencies once:
+1. Haz un fork de este repositorio.
+2. Sube tu `default.xbe` (NTSC-U, de tu propia copia) a un sitio con enlace de
+   descarga directa y privado, por ejemplo Dropbox cambiando `?dl=0` por
+   `?dl=1`.
+3. En tu fork, ve a **Settings → Secrets and variables → Actions → New
+   repository secret**, con nombre `NFSU_XBE_URL` y como valor ese enlace.
+4. Ve a **Actions → Android APK → Run workflow**.
+5. Cuando termine (unos 10 minutos), descarga la APK en la sección
+   **Artifacts** de esa ejecución.
+
+El `default.xbe` solo se descarga dentro de la máquina temporal de GitHub y no
+se publica. La APK contiene código recompilado del juego, por eso el artifact
+se guarda **solo un día**: en un repositorio público cualquier usuario de
+GitHub con sesión iniciada podría descargarlo. Bórralo de la página de la
+ejecución cuando lo tengas y no lo compartas.
+
+## Compilar en tu ordenador
+
+Instrucciones para Linux. La APK es para **ARM64**, Android 11 o superior
+(API 30+).
+
+### Requisitos
+
+- Git, Python 3 con `venv` y `pip`, y JDK 21 o superior.
+- Android SDK con la plataforma **37**, el NDK **30.0.16248370** y CMake
+  **4.1.2**. Se instalan desde el SDK Manager de Android Studio o con
+  `sdkmanager`.
+- El `default.xbe` original de Xbox **NTSC-U** de tu copia del juego. Los datos
+  del juego no se incluyen en el repositorio ni en la APK.
+
+Gradle **9.8.0** se descarga con el wrapper; el Android Gradle Plugin **9.4.1**
+ya está configurado. Compila desde un checkout de Git: el launcher muestra el
+commit actual como número de compilación.
+
+### Preparar y compilar
+
+Desde la raíz del repositorio, descarga una vez las dependencias fijadas:
 
 ```sh
 git submodule update --init --recursive
 ```
 
-Open the repository root in Android Studio and select your JDK, or use the
-command line. In `local.properties`, set your SDK and game executable
-paths (this file is ignored by Git):
+Abre la raíz del repositorio en Android Studio y elige tu JDK, o usa la línea
+de comandos. En `local.properties` indica la ruta del SDK y del ejecutable del
+juego (Git ignora este archivo):
 
 ```properties
-sdk.dir=/path/to/Android/Sdk
-nfsu.xbe=/path/to/Need For Speed Underground/default.xbe
+sdk.dir=/ruta/a/Android/Sdk
+nfsu.xbe=/ruta/a/Need For Speed Underground/default.xbe
 ```
 
-If `nfsu.xbe` is omitted, Gradle uses
-`game/Need For Speed Underground/default.xbe` relative to the repository root.
-Then build:
+Si no pones `nfsu.xbe`, Gradle usa `game/Need For Speed Underground/default.xbe`
+relativo a la raíz del repositorio. Después compila:
 
 ```sh
 ./gradlew assembleDebug
 ```
 
-Gradle creates its own Python virtual environment, installs the pinned generator
-dependencies, generates C sources from the XBE, and builds the native libraries
-and APK. Python 3 with `venv` must be installed; no manual `pip` or preparation
-script is needed. The first build needs network access for dependencies.
-Generated sources and analysis files live under `android/app/build/` and are
-regenerated when the XBE or generator inputs change. `clean` removes them.
-Use `-Pnfsu.xbe=/path/to/default.xbe` to override the executable for one build,
-and `-Pnfsu.python=/path/to/python3` to choose a Python interpreter.
+Gradle crea su propio entorno virtual de Python, instala las dependencias del
+generador, genera el código C a partir del XBE y compila las librerías nativas
+y la APK. No hace falta usar `pip` a mano ni scripts de preparación. La primera
+compilación necesita conexión a internet. El código generado se guarda en
+`android/app/build/` y se regenera cuando cambian el XBE o el generador;
+`clean` lo borra. Usa `-Pnfsu.xbe=/ruta/a/default.xbe` para cambiar el
+ejecutable en una compilación y `-Pnfsu.python=/ruta/a/python3` para elegir el
+intérprete de Python.
 
-The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
-To install it on a connected device with USB debugging enabled:
+La APK se genera en `android/app/build/outputs/apk/debug/app-debug.apk`. Para
+instalarla en un dispositivo conectado con depuración USB:
 
 ```sh
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-On first launch, select the extracted Xbox game folder containing `default.xbe`,
-`CARS`, `TRACKS`, and the remaining disc files. Keep that folder available while
-playing; it is read directly rather than copied into the app.
+## Licencia
 
-See [the Android README](android/README.md) for controls, graphics, and runtime
-details.
+Copyright (C) 2026 cherepavel. Modificaciones de NFSU-X Carrerillas (C) 2026
+KB-retro.
 
-### GitHub Actions
+El código de este proyecto se distribuye bajo la **Licencia Pública General de
+GNU, versión 3 o (a tu elección) cualquier versión posterior**
+(`SPDX-License-Identifier: GPL-3.0-or-later`). Consulta [LICENSE](LICENSE)
+para los términos completos. Este software se ofrece sin ninguna garantía.
 
-The [Android APK workflow](.github/workflows/android.yml) builds an ARM64 debug
-APK only when started by hand: **Actions → Android APK → Run workflow**. It
-uses the root Gradle build and runs `lintDebug`.
+El código de terceros conserva sus avisos de copyright y licencia. En
+particular, consulta [xboxrecomp/LICENSE](xboxrecomp/LICENSE),
+[xboxrecomp/NOTICE](xboxrecomp/NOTICE) y los archivos de licencia de los
+submódulos SDL y glslang.
 
-Before the first run, add a repository Actions secret named `NFSU_XBE_URL`
-under **Settings → Secrets and variables → Actions**. Set it to a private HTTPS
-URL that downloads the supported NTSC-U `default.xbe` directly, without a login
-page. Supply your own game copy. The executable is downloaded into the
-runner's temporary directory and is not uploaded as an artifact.
-
-Download the APK from the successful run's **Artifacts** section. The APK
-contains code recompiled from the game, so the artifact is kept for **one
-day** only: on a public repository any signed-in GitHub user can download it.
-Delete it from the run page once you have it, and do not share it. The APK
-uses the runner's debug signing key, which can change between runs; updating
-an existing installation may require uninstalling it first. Back up saves
-(Settings → Export saves) before uninstalling.
-
-## License
-
-Copyright (C) 2026 cherepavel.
-
-The original code in this project is licensed under the **GNU General Public
-License, version 3 or (at your option) any later version**
-(`SPDX-License-Identifier: GPL-3.0-or-later`). See [LICENSE](LICENSE) for the
-full terms. This software is provided without warranty.
-
-Third-party code retains its existing copyright and license notices. In
-particular, see [xboxrecomp/LICENSE](xboxrecomp/LICENSE),
-[xboxrecomp/NOTICE](xboxrecomp/NOTICE), and the license files in the SDL and
-glslang submodules.
-
-The GPL grant covers the project's code, not the original game's executable,
-game data, logos, artwork, or trademarks. Those remain subject to their
-respective owners' rights; inclusion or reference here does not grant a license
-to them.
+La licencia GPL cubre el código del proyecto, no el ejecutable original del
+juego, sus datos, logotipos, ilustraciones ni marcas. Estos siguen sujetos a
+los derechos de sus respectivos propietarios; mencionarlos aquí no concede
+ninguna licencia sobre ellos.
