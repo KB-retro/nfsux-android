@@ -80,8 +80,13 @@ jobs:
             | while IFS= read -r line; do echo "::error::${line:0:900}"; done
           echo "::error::tail: $(tail -c 3000 "$RUNNER_TEMP/build.log" | tr '\n' ' ')"
 
+      - name: Name the APK
+        run: |
+          mkdir -p "$RUNNER_TEMP/apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/apk/NFSU-X.apk"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: nfsu1-android-arm64-debug-${{ github.sha }}
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: NFSU-X-${{ github.sha }}
+          path: ${{ runner.temp }}/apk/NFSU-X.apk
           retention-days: 1

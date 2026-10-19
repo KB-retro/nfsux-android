@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">NFSU-X Carrerillas</string>
+    <string name="app_name" translatable="false">NFSU-X</string>
     <string name="launcher_title">SELECT GAME FILES</string>
     <string name="launcher_description">Choose your extracted Xbox game folder containing default.xbe, CARS and TRACKS. Files stay on your storage.</string>
     <string name="launcher_choose">SELECT FOLDER  ›</string>

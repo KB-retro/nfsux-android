@@ -61,7 +61,7 @@ Detalles técnicos (en inglés) en [android/README.md](android/README.md).
    Xbox **NTSC-U (USA)**: debe contener `default.xbe`, `CARS`, `FRONTEND`,
    `GLOBAL`, `LANGUAGES`, `MOVIES`, `SOUND` y `TRACKS`. Puede estar en la
    memoria interna, una tarjeta SD o un USB. No se admite la ISO sin extraer.
-4. Abre **NFSU-X Carrerillas**, pulsa **Seleccionar carpeta**, elige esa
+4. Abre **NFSU-X**, pulsa **Seleccionar carpeta**, elige esa
    carpeta y concede el acceso de lectura.
 5. Pulsa **Jugar**. En **Ajustes** puedes cambiar gráficos, sonido, idioma,
    el contador de FPS y hacer copias de seguridad de tus partidas.
@@ -86,7 +86,7 @@ La forma más sencilla de obtener la APK, sin instalar nada en tu ordenador:
 3. En tu fork, ve a **Settings → Secrets and variables → Actions → New
    repository secret**, con nombre `NFSU_XBE_URL` y como valor ese enlace.
 4. Ve a **Actions → Android APK → Run workflow**.
-5. Cuando termine (unos 10 minutos), descarga la APK en la sección
+5. Cuando termine (unos 10 minutos), descarga `NFSU-X.apk` en la sección
    **Artifacts** de esa ejecución.
 
 El `default.xbe` solo se descarga dentro de la máquina temporal de GitHub y no
