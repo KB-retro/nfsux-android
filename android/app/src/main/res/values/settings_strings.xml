@@ -24,7 +24,7 @@
     <string name="settings_reflections">Car reflections</string>
     <string name="settings_blur">Blur and bloom</string>
     <string name="settings_square">Square pixels</string>
-    <string name="settings_widescreen">Widescreen 16:9 (Hor+)</string>
+    <string name="settings_aspect">Picture format</string>
     <string name="settings_volume">Master volume</string>
     <string name="settings_language">Game language</string>
     <string name="settings_language_hint">The game uses this language when its LANGUAGES folder has it; otherwise it stays in English. European discs carry more languages than the North American one.</string>
@@ -64,5 +64,10 @@
         <item>Français</item>
         <item>Deutsch</item>
         <item>Italiano</item>
+    </string-array>
+    <string-array name="settings_aspects">
+        <item>Automatic</item>
+        <item>Widescreen 16:9</item>
+        <item>Classic 4:3</item>
     </string-array>
 </resources>

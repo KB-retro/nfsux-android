@@ -59,8 +59,14 @@ Settings apply at the next game start:
   filtering, car reflections, blur/bloom, square pixels). Unknown keys such as
   the touch sensor mode are kept.
 - Runtime switches written to `nfsu1x_launcher.txt` and loaded before
-  `nfsu1x_env.txt`, which still overrides them: `RECOMP_HORPLUS`
-  (widescreen), `RECOMP_AUDIO_VOLUME` (0-100) and `RECOMP_LANGUAGE`.
+  `nfsu1x_env.txt`, which still overrides them: `RECOMP_WIDESCREEN`
+  (picture format: unset = automatic, 1 = 16:9, 0 = original 4:3), `RECOMP_AUDIO_VOLUME` (0-100) and `RECOMP_LANGUAGE`.
+
+With the automatic picture format, GameActivity sets `RECOMP_WIDESCREEN` from
+the screen before the native runtime starts: screens narrower than 1.45:1
+(4:3, 5:4) get the original 4:3 picture filling the screen, wider ones the
+16:9 Hor+ picture. 4:3 also turns off Hor+, the HUD corrections and square
+pixels; menu touch follows the same letterbox.
 
 `RECOMP_LANGUAGE` is the dashboard language the emulated kernel reports
 through `XC_LANGUAGE` (1 English, 3 German, 4 French, 5 Spanish, 6 Italian;

@@ -27,8 +27,8 @@ public final class SettingsActivity extends Activity {
     private static final int EXPORT_SAVES = 1, IMPORT_SAVES = 2;
     private LauncherSettings settings;
     private LinearLayout rows;
-    private Spinner frameRate, scale, aniso, language;
-    private Switch fxaa, reflections, blur, square, widescreen, showFps, autoStart;
+    private Spinner frameRate, scale, aniso, aspect, language;
+    private Switch fxaa, reflections, blur, square, showFps, autoStart;
     private SeekBar volume;
     private int initialScale;
 
@@ -59,7 +59,10 @@ public final class SettingsActivity extends Activity {
         reflections = toggle(R.string.settings_reflections, settings.option("reflections", 1) != 0);
         blur = toggle(R.string.settings_blur, settings.option("blur", 1) != 0);
         square = toggle(R.string.settings_square, settings.option("square", 1) != 0);
-        widescreen = toggle(R.string.settings_widescreen, settings.envValue("RECOMP_HORPLUS", 1) != 0);
+        // Automatic leaves RECOMP_WIDESCREEN unset; GameActivity then picks it from the screen.
+        String widescreen = settings.env.get("RECOMP_WIDESCREEN");
+        aspect = choice(R.string.settings_aspect, R.array.settings_aspects,
+            widescreen == null ? 0 : widescreen.startsWith("0") ? 2 : 1);
         showFps = toggle(R.string.settings_show_fps, LauncherSettings.showFps(this));
 
         section(R.string.settings_section_audio);
@@ -112,7 +115,10 @@ public final class SettingsActivity extends Activity {
         settings.options.put("reflections", reflections.isChecked() ? "1" : "0");
         settings.options.put("blur", blur.isChecked() ? "1" : "0");
         settings.options.put("square", square.isChecked() ? "1" : "0");
-        settings.env.put("RECOMP_HORPLUS", widescreen.isChecked() ? "1" : "0");
+        // Earlier builds wrote RECOMP_HORPLUS here, which only stretched 4:3 to 16:9.
+        settings.env.remove("RECOMP_HORPLUS");
+        if (aspect.getSelectedItemPosition() == 0) settings.env.remove("RECOMP_WIDESCREEN");
+        else settings.env.put("RECOMP_WIDESCREEN", aspect.getSelectedItemPosition() == 1 ? "1" : "0");
         settings.env.put("RECOMP_AUDIO_VOLUME", Integer.toString(volume.getProgress()));
         settings.env.put("RECOMP_LANGUAGE",
             Integer.toString(LauncherSettings.LANGUAGES[language.getSelectedItemPosition()]));

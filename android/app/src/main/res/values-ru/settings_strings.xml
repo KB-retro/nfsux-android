@@ -24,7 +24,7 @@
     <string name="settings_reflections">Отражения на машинах</string>
     <string name="settings_blur">Размытие и свечение</string>
     <string name="settings_square">Квадратные пиксели</string>
-    <string name="settings_widescreen">Широкий экран 16:9 (Hor+)</string>
+    <string name="settings_aspect">Формат изображения</string>
     <string name="settings_volume">Общая громкость</string>
     <string name="settings_language">Язык игры</string>
     <string name="settings_language_hint">Игра использует этот язык, если он есть в папке LANGUAGES; иначе остаётся английский. На европейских дисках языков больше, чем на североамериканском.</string>
@@ -51,5 +51,10 @@
         <item>4x</item>
         <item>8x</item>
         <item>16x</item>
+    </string-array>
+    <string-array name="settings_aspects">
+        <item>Автоматически</item>
+        <item>Широкий 16:9</item>
+        <item>Классический 4:3</item>
     </string-array>
 </resources>

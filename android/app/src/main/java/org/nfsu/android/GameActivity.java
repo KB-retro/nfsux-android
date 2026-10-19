@@ -332,11 +332,33 @@ public final class GameActivity extends SDLActivity {
         return new String[] { "c++_shared", "SDL2", "nfsu2_recomp" };
     }
 
+    /**
+     * Automatic picture format: unless the launcher or nfsu1x_env.txt sets
+     * RECOMP_WIDESCREEN, screens narrower than 3:2 (4:3, 5:4) get the
+     * original 4:3 picture instead of a letterboxed 16:9 one.
+     */
+    private void chooseAspect() {
+        try {
+            if (new LauncherSettings(this).load().env.containsKey("RECOMP_WIDESCREEN")) return;
+        } catch (java.io.IOException exception) {
+            android.util.Log.w("NFSU", "Cannot read launcher settings", exception);
+        }
+        android.graphics.Rect bounds = getWindowManager().getMaximumWindowMetrics().getBounds();
+        float ratio = (float) Math.max(bounds.width(), bounds.height())
+            / Math.max(1, Math.min(bounds.width(), bounds.height()));
+        try {
+            android.system.Os.setenv("RECOMP_WIDESCREEN", ratio < 1.45f ? "0" : "1", true);
+        } catch (android.system.ErrnoException exception) {
+            android.util.Log.w("NFSU", "Cannot set RECOMP_WIDESCREEN", exception);
+        }
+    }
+
     @Override
     protected String[] getArguments() {
         File root = gameDirectory();
         String selected = getSharedPreferences("game", MODE_PRIVATE).getString("tree", null);
         if (selected == null) throw new IllegalStateException("Папка игры не выбрана");
+        chooseAspect();
         SafAccess.configure(getContentResolver(), Uri.parse(selected));
         SafAccess.bindNative();
         return new String[] { "/saf-game", root.getAbsolutePath() };

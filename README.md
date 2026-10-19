@@ -21,7 +21,10 @@ sin emulador.
   táctiles (también en inglés y ruso; sigue el idioma del sistema).
 - **Pantalla de ajustes en el launcher**, sin editar archivos a mano:
   - Gráficos: 30/60 FPS, escala de resolución, FXAA, filtro anisotrópico,
-    reflejos, desenfoque/bloom, píxeles cuadrados y pantalla panorámica 16:9.
+    reflejos, desenfoque/bloom y píxeles cuadrados.
+  - Formato de imagen: automático, panorámico 16:9 o clásico 4:3. En
+    automático, las pantallas 4:3 (por ejemplo consolas retro Android) usan la
+    imagen 4:3 original a pantalla completa, sin franjas negras.
   - Volumen general.
   - Idioma del juego (inglés, español, francés, alemán, italiano). El juego
     solo lo usa si su carpeta `LANGUAGES` lo incluye.
@@ -35,7 +38,7 @@ sin emulador.
 
 - Controles táctiles personalizables en carrera, menús táctiles, vibración y
   compatibilidad con mandos.
-- Renderizado Vulkan con panorámico 16:9, reflejos en los coches, mipmaps y FXAA.
+- Renderizado Vulkan con panorámico 16:9 o 4:3, reflejos en los coches, mipmaps y FXAA.
 
 Detalles técnicos (en inglés) en [android/README.md](android/README.md).
 

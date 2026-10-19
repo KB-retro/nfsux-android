@@ -24,7 +24,7 @@
     <string name="settings_reflections">Reflejos en los coches</string>
     <string name="settings_blur">Desenfoque y resplandor</string>
     <string name="settings_square">Píxeles cuadrados</string>
-    <string name="settings_widescreen">Pantalla panorámica 16:9 (Hor+)</string>
+    <string name="settings_aspect">Formato de imagen</string>
     <string name="settings_volume">Volumen general</string>
     <string name="settings_language">Idioma del juego</string>
     <string name="settings_language_hint">El juego usa este idioma si su carpeta LANGUAGES lo incluye; si no, sigue en inglés. Los discos europeos traen más idiomas que el norteamericano.</string>
@@ -51,5 +51,10 @@
         <item>4x</item>
         <item>8x</item>
         <item>16x</item>
+    </string-array>
+    <string-array name="settings_aspects">
+        <item>Automático</item>
+        <item>Panorámico 16:9</item>
+        <item>Clásico 4:3</item>
     </string-array>
 </resources>
