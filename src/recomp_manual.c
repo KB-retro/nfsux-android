@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sys/stat.h>
 
 /* The generated register model (g_eax/g_esp are thread-local there) and the
  * XBOX_PTR/MEM32 accessors; the register names below are its macros. */
@@ -589,6 +590,42 @@ void sub_00011190(void)
             lang, s_lang_ids[lang]);
     eax = (uint32_t)s_lang_ids[lang];
     esp += 4;                                   /* ret */
+}
+
+/* Movie path (cdecl: buffer, size, name): sprintf "d:\\MOVIES\\<name>.mad".
+ * With a non-English language the front end asks for localized movies
+ * (logo_spa, spa_drag, ... in the name table at 0x249C98); the NTSC-U disc
+ * may carry only the English ones, and a missing movie stays black until
+ * skipped. Fall back to the _eng/eng_ movie when the localized one is absent. */
+extern void sub_000DCFA0_gen(void);
+extern int xbox_translate_path(const char *xbox_path, char *host_path_buf, uint32_t buf_size);
+void sub_000DCFA0(void)
+{
+    static const char *const tags[] = { "fre", "ger", "ita", "spa", "dut", "swe" };
+    uint32_t buffer = MEM32(esp + 4);
+    char host[1024];
+    struct stat info;
+    char *path, *name;
+    size_t i;
+
+    sub_000DCFA0_gen();
+    path = (char *)XBOX_PTR(buffer);
+    if (!xbox_translate_path(path, host, sizeof host) || stat(host, &info) == 0)
+        return;
+    name = strrchr(path, '\\');
+    name = name ? name + 1 : path;
+    for (i = 0; i < sizeof tags / sizeof tags[0]; i++) {
+        char *tag = NULL;
+        if (!strncmp(name, "logo_", 5) && !strncmp(name + 5, tags[i], 3))
+            tag = name + 5;
+        else if (!strncmp(name, tags[i], 3) && !strncmp(name + 3, "_drag", 5))
+            tag = name;
+        if (tag) {
+            memcpy(tag, "eng", 3);
+            NFS_LOG_INFO("system", "[movie] %s.mad missing, playing the English one\n", tags[i]);
+            return;
+        }
+    }
 }
 
 /* Hor+ 16:9. NFSU1 has no widescreen mode (its only XGetVideoFlags caller,
