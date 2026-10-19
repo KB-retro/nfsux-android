@@ -70,7 +70,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build
-        run: ./gradlew --no-daemon assembleDebug lintDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon assembleDebug lintDebug 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Report build errors
+        if: failure()
+        run: |
+          [ -f "$RUNNER_TEMP/build.log" ] || exit 0
+          # Annotations are readable without the full log.
+          grep -nE "error:|FAILED|What went wrong|Exception|fatal" "$RUNNER_TEMP/build.log" | head -40 \
+            | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+          echo "::error::tail: $(tail -c 3000 "$RUNNER_TEMP/build.log" | tr '\n' ' ')"
 
       - uses: actions/upload-artifact@v4
         with:
