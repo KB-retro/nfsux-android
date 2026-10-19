@@ -106,7 +106,9 @@ static int touch_carousel_binding(uint32_t screen, TouchCarousel *binding)
         };
         return 1;
     }
-    /* MainMenuCarCustomize B9E80 and ChooseCareerCarScreen B7F60 construct
+    /* UndergroundTradeCarScreen B73F0 also uses +48/+54; B75E0 accepts
+     * MouseClick/Select and delegates Left/Right to B7190.
+     * MainMenuCarCustomize B9E80 and ChooseCareerCarScreen B7F60 construct
      * the same browser at +48, selected node +54. B9D70/B7DD0 accept
      * MouseClick/Select; B9CC0/B7D40 handle native Left/Right. */
     if (MEM32(screen + 0x48) == 0x001FF870u) {
