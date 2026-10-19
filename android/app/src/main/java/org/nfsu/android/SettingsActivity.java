@@ -28,7 +28,7 @@ public final class SettingsActivity extends Activity {
     private LauncherSettings settings;
     private LinearLayout rows;
     private Spinner frameRate, scale, aniso, aspect, language;
-    private Switch fxaa, reflections, blur, square, showFps, autoStart;
+    private Switch fxaa, reflections, blur, square, showFps, fastCores, autoStart;
     private SeekBar volume;
     private int initialScale;
 
@@ -64,6 +64,8 @@ public final class SettingsActivity extends Activity {
         aspect = choice(R.string.settings_aspect, R.array.settings_aspects,
             widescreen == null ? 0 : widescreen.startsWith("0") ? 2 : 1);
         showFps = toggle(R.string.settings_show_fps, LauncherSettings.showFps(this));
+        fastCores = toggle(R.string.settings_fast_cores, settings.envValue("RECOMP_FAST_CORES", 0) == 1);
+        hint(R.string.settings_fast_cores_hint);
 
         section(R.string.settings_section_audio);
         volume = slider(R.string.settings_volume, settings.envValue("RECOMP_AUDIO_VOLUME", 100));
@@ -119,6 +121,7 @@ public final class SettingsActivity extends Activity {
         settings.env.remove("RECOMP_HORPLUS");
         if (aspect.getSelectedItemPosition() == 0) settings.env.remove("RECOMP_WIDESCREEN");
         else settings.env.put("RECOMP_WIDESCREEN", aspect.getSelectedItemPosition() == 1 ? "1" : "0");
+        settings.env.put("RECOMP_FAST_CORES", fastCores.isChecked() ? "1" : "0");
         settings.env.put("RECOMP_AUDIO_VOLUME", Integer.toString(volume.getProgress()));
         settings.env.put("RECOMP_LANGUAGE",
             Integer.toString(LauncherSettings.LANGUAGES[language.getSelectedItemPosition()]));

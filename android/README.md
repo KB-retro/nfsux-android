@@ -98,6 +98,11 @@ On Android 13+ the game and renderer threads share an APerformanceHint session
 the 30 or 60 FPS target, so power-saving CPU profiles raise clocks when frames
 run late. Older Android versions skip it; `RECOMP_PERF_HINT=0` turns it off.
 The `[perfhint]` line in `logs/performance.log` says whether a session started.
+`RECOMP_FAST_CORES=1` (launcher: "Use only the fast CPU cores", off by
+default) pins the game and renderer threads to the cores whose maximum
+frequency is at least 80% of the fastest, read from sysfs; `[cores]` lines in
+`logs/performance.log` show the result. Meant for power-saving profiles that
+move the game onto little cores; not measured yet.
 The CI build compiles the lifted code with `-Pnfsu.genOpt=-O2`, the level used
 for the device measurements in `docs/performance-counters.md`.
 

@@ -31,6 +31,8 @@
     <string name="settings_auto_start">Запускать игру автоматически</string>
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>
+    <string name="settings_fast_cores">Только быстрые ядра процессора</string>
+    <string name="settings_fast_cores_hint">Экспериментально. Может помочь в энергосберегающих профилях, которые переносят игру на медленные ядра.</string>
     <string name="settings_show_fps">Показывать счётчик FPS</string>
     <string name="settings_section_saves">СОХРАНЕНИЯ</string>
     <string name="settings_export_saves">Экспорт сохранений (.zip)</string>

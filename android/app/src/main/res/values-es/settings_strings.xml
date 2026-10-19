@@ -31,6 +31,8 @@
     <string name="settings_auto_start">Iniciar el juego automáticamente</string>
     <string name="settings_saved">Ajustes guardados</string>
     <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
+    <string name="settings_fast_cores">Usar solo los núcleos rápidos</string>
+    <string name="settings_fast_cores_hint">Experimental. Puede ayudar en perfiles de ahorro que mueven el juego a los núcleos lentos.</string>
     <string name="settings_show_fps">Mostrar contador de FPS</string>
     <string name="settings_section_saves">PARTIDAS GUARDADAS</string>
     <string name="settings_export_saves">Exportar partidas (.zip)</string>
