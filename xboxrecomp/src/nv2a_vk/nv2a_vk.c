@@ -4217,6 +4217,12 @@ static void vk_flip_impl(void)
     pend_flush();
     s_frame++;
     nv2a_vk_frames_presented = s_frame;
+#ifdef __ANDROID__
+    {
+        extern void android_perf_hint_frame(void);   /* src/android_perf_hint.c */
+        android_perf_hint_frame();
+    }
+#endif
     if (s_frame % 300 == 0) {
         pool_report();
         NFS_LOG_DEBUG("graphics", "[vkkick] threshold %d, %u early submits (frame %u)\n",

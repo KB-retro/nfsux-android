@@ -27,6 +27,9 @@
 #include <string.h>
 
 #ifdef __ANDROID__
+#include "android_perf_hint.h"
+#endif
+#ifdef __ANDROID__
 #include <SDL.h>
 #include <pthread.h>
 #include <ucontext.h>
@@ -332,6 +335,7 @@ int main(int argc, char **argv)
 #ifdef __ANDROID__
 static DWORD WINAPI android_game_thread(void *arg)
 {
+    android_perf_hint_add_thread();
     *(int *)arg = game_main();
     android_host_game_finished();
     return 0;

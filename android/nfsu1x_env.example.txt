@@ -39,3 +39,6 @@ RECOMP_QUIET=1
 # Dashboard language reported to the game (also set in launcher Settings):
 # 1 English, 3 German, 4 French, 5 Spanish, 6 Italian.
 # RECOMP_LANGUAGE=5
+
+# Ask Android (13+) for CPU boosts when frames run late. 0 turns it off.
+# RECOMP_PERF_HINT=0

@@ -78,7 +78,7 @@ set(GAME_SOURCES
 
 if(ANDROID)
     add_library(${PROJECT_NAME} SHARED ${GAME_SOURCES} ${RECOMP_GEN_SOURCES}
-        src/android_host.c src/android_env.c src/android_logs.c src/android_saf.c src/android_diagnostics.c src/android_perf.c src/menu_touch.c src/input_mode.c src/feng_touch.c
+        src/android_host.c src/android_env.c src/android_logs.c src/android_saf.c src/android_diagnostics.c src/android_perf.c src/android_perf_hint.c src/menu_touch.c src/input_mode.c src/feng_touch.c
         src/touch_gesture.c src/touch_orbit.c src/feng_touch_carousel.c src/feng_touch_camera.c src/feng_touch_magazines.c
         src/race_touch.c src/android_race_controls.c)
     target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 zlog_s log android)

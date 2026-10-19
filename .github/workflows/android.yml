@@ -82,7 +82,7 @@ jobs:
           NFSU_KEYSTORE_PASSWORD: ${{ secrets.NFSU_KEYSTORE_PASSWORD }}
         run: |
           set -o pipefail
-          ./gradlew --no-daemon assembleDebug lintDebug 2>&1 | tee "$RUNNER_TEMP/build.log"
+          ./gradlew --no-daemon assembleDebug lintDebug -Pnfsu.genOpt=-O2 2>&1 | tee "$RUNNER_TEMP/build.log"
 
       - name: Report build errors
         if: failure()

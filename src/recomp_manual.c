@@ -39,6 +39,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include "android_diagnostics.h"
+#include "android_perf_hint.h"
 
 /* Boundary snapshots, not asynchronous stack unwinding. The SDL host thread
  * can report them even when a guest worker or its GIL stops making progress. */
@@ -1037,6 +1038,9 @@ static const char *const s_fps_texts[] = { "30 FPS", "60 FPS" };
 static void frame_rate_changed(void)
 {
     /* Applied by the race render wrapper on the next frame. */
+#ifdef __ANDROID__
+    android_perf_hint_set_fps(s_fps60 ? 60 : 30);
+#endif
 }
 
 static const OptRow s_rows[] = {
@@ -1122,6 +1126,7 @@ void nfsu1_options_load(void)
 #ifdef __ANDROID__
     input_mode_configure(sensor_preference, race_overlay);
 #endif
+    frame_rate_changed();
     refl_changed();
 #ifdef NFSU2_VULKAN
     {

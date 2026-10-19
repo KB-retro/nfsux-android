@@ -91,6 +91,16 @@ the same name; close the game first.
 The launcher, settings and touch-control editor are translated into English,
 Russian and Spanish and follow the system language.
 
+## Performance hints and -O2
+
+On Android 13+ the game and renderer threads share an APerformanceHint session
+(`src/android_perf_hint.c`): each presented frame reports its interval against
+the 30 or 60 FPS target, so power-saving CPU profiles raise clocks when frames
+run late. Older Android versions skip it; `RECOMP_PERF_HINT=0` turns it off.
+The `[perfhint]` line in `logs/performance.log` says whether a session started.
+The CI build compiles the lifted code with `-Pnfsu.genOpt=-O2`, the level used
+for the device measurements in `docs/performance-counters.md`.
+
 ## Experimental 60 FPS
 
 In the in-game **Options -> Camera** menu, set **Frame Rate** to **60 FPS**.
