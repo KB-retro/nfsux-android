@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name" translatable="false">NFSU-X Carrerillas</string>
     <string name="launcher_title">SELECT GAME FILES</string>
     <string name="launcher_description">Choose your extracted Xbox game folder containing default.xbe, CARS and TRACKS. Files stay on your storage.</string>
     <string name="launcher_choose">SELECT FOLDER  ›</string>
     <string name="launcher_checking">Checking game files…</string>
     <string name="launcher_unavailable">GAME FILES UNAVAILABLE\nReconnect your storage or select the game folder again. Check that it contains the supported Xbox release.</string>
-    <string name="launcher_logo">Need for Speed Underground</string>
+    <string name="launcher_logo">NFSU-X Carrerillas</string>
     <string name="launcher_platform">XBOX RECOMPILATION / ANDROID</string>
-    <string name="launcher_credits">&lt;a href="https://github.com/cherepavel/nfsu1-android/commit/%2$s"&gt;Build %1$s&lt;/a&gt;　/　&lt;a href="https://github.com/cherepavel/nfsu1-android"&gt;Repository&lt;/a&gt;　/　Port by &lt;a href="https://github.com/cherepavel"&gt;cherepavel&lt;/a&gt;</string>
+    <string name="launcher_credits">&lt;a href="https://github.com/KB-retro/nfsux-android/commit/%2$s"&gt;Build %1$s&lt;/a&gt;　/　&lt;a href="https://github.com/KB-retro/nfsux-android"&gt;Repository&lt;/a&gt;　/　&lt;a href="https://github.com/KB-retro"&gt;KB-retro&lt;/a&gt;</string>
     <string name="port_credits_title">Android port</string>
     <string name="port_credits_close">Close</string>
-    <string name="port_credits_body">Android port by &lt;a href="https://github.com/cherepavel"&gt;cherepavel&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/cherepavel/nfsu1-android/commit/%2$s"&gt;Build %1$s&lt;/a&gt;&lt;br&gt;Repository: &lt;a href="https://github.com/cherepavel/nfsu1-android"&gt;nfsu1-android&lt;/a&gt;&lt;br&gt;&lt;br&gt;Based on the port by &lt;a href="https://github.com/antoxa2584x"&gt;antoxa2584x&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/antoxa2584x/nfsu1-sw"&gt;nfsu1-sw&lt;/a&gt;</string>
+    <string name="port_credits_body">NFSU-X Carrerillas by &lt;a href="https://github.com/KB-retro"&gt;KB-retro&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/KB-retro/nfsux-android/commit/%2$s"&gt;Build %1$s&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/KB-retro/nfsux-android"&gt;nfsux-android&lt;/a&gt;&lt;br&gt;&lt;br&gt;Derivative of the Android port by &lt;a href="https://github.com/cherepavel"&gt;cherepavel&lt;/a&gt; (&lt;a href="https://github.com/cherepavel/nfsu1-android"&gt;nfsu1-android&lt;/a&gt;),&lt;br&gt;based on the Nintendo Switch port by &lt;a href="https://github.com/antoxa2584x"&gt;antoxa2584x&lt;/a&gt; (&lt;a href="https://github.com/antoxa2584x/nfsu1-sw"&gt;nfsu1-sw&lt;/a&gt;)</string>
 </resources>

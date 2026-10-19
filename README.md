@@ -1,13 +1,53 @@
 <div align="center">
 
-<img src="https://cdn2.steamgriddb.com/logo/e88a994b60847fd3f5bf29ddce531b13.png" alt="Need for Speed: Underground" width="520">
+<img src="assets/branding/nfsux-logo.png" alt="NFSU-X Carrerillas" width="520">
 
-### Xbox static recompilation for Android
+### Recompilación estática de Xbox para Android
 
-The original Xbox (NTSC-U) release of **Need for Speed: Underground**, lifted
-instruction by instruction to C and running natively, with no emulator.
+Proyecto derivado de [nfsu1-android](https://github.com/cherepavel/nfsu1-android)
+de cherepavel: la versión original de Xbox (NTSC-U) de *Need for Speed:
+Underground*, traducida instrucción a instrucción a C y ejecutada de forma
+nativa en Android, sin emulador.
 
 </div>
+
+> **NFSU-X Carrerillas** es un proyecto de fans sin relación con Electronic Arts.
+> *Need for Speed* y *Need for Speed: Underground* son marcas de Electronic Arts.
+> El repositorio no incluye datos ni ejecutables del juego: necesitas tu propia
+> copia original de Xbox (NTSC-U).
+
+## Novedades de NFSU-X Carrerillas
+
+Además de todo lo que ya hace el port original:
+
+- **Traducción al español** del launcher, los ajustes y el editor de controles
+  táctiles (también en inglés y ruso; sigue el idioma del sistema).
+- **Pantalla de ajustes en el launcher**, sin editar archivos a mano:
+  - Gráficos: 30/60 FPS, escala de resolución, FXAA, filtro anisotrópico,
+    reflejos, desenfoque/bloom, píxeles cuadrados y pantalla panorámica 16:9.
+  - Volumen general.
+  - Idioma del juego (inglés, español, francés, alemán, italiano). El juego
+    solo lo usa si su carpeta `LANGUAGES` lo incluye.
+  - Inicio automático opcional.
+- **Contador de FPS** en pantalla.
+- **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de
+  la carrera y opciones en un `.zip`.
+- **Jugar / Ajustes / Cambiar carpeta** al abrir la app, en lugar de arrancar
+  el juego directamente.
+- Aviso claro si la carpeta tiene otra versión del juego (por ejemplo PAL).
+- Nombre, logo e icono propios.
+
+Detalles técnicos en [android/README.md](android/README.md).
+
+## Créditos
+
+- Port para Android: [cherepavel](https://github.com/cherepavel) —
+  [nfsu1-android](https://github.com/cherepavel/nfsu1-android).
+- Basado en el port para Nintendo Switch de
+  [antoxa2584x](https://github.com/antoxa2584x) —
+  [nfsu1-sw](https://github.com/antoxa2584x/nfsu1-sw).
+- Toolkit de recompilación: [xboxrecomp](xboxrecomp/).
+- NFSU-X Carrerillas: [KB-retro](https://github.com/KB-retro).
 
 ## Build for Android
 
@@ -77,22 +117,22 @@ details.
 ### GitHub Actions
 
 The [Android APK workflow](.github/workflows/android.yml) builds an ARM64 debug
-APK on pushes to `main` and through **Actions → Android APK → Run workflow**.
-It uses the root Gradle build and runs `lintDebug`.
+APK only when started by hand: **Actions → Android APK → Run workflow**. It
+uses the root Gradle build and runs `lintDebug`.
 
 Before the first run, add a repository Actions secret named `NFSU_XBE_URL`
 under **Settings → Secrets and variables → Actions**. Set it to a private HTTPS
 URL that downloads the supported NTSC-U `default.xbe` directly, without a login
-page. Supply your own game copy; keep the URL valid for subsequent builds or
-replace it when it expires. The executable is downloaded into the runner's
-temporary directory and is not uploaded as an artifact. No game assets are
-needed for CI. Pull requests do not trigger this workflow.
+page. Supply your own game copy. The executable is downloaded into the
+runner's temporary directory and is not uploaded as an artifact.
 
-Download the APK from the successful run's **Artifacts** section:
-`nfsu1-android-arm64-debug-<commit>`. Artifacts are retained for 14 days.
-The APK uses the runner's debug signing key, which can change between runs;
-updating an existing installation may require uninstalling it first. Back up
-saves before uninstalling. This workflow does not publish GitHub Releases.
+Download the APK from the successful run's **Artifacts** section. The APK
+contains code recompiled from the game, so the artifact is kept for **one
+day** only: on a public repository any signed-in GitHub user can download it.
+Delete it from the run page once you have it, and do not share it. The APK
+uses the runner's debug signing key, which can change between runs; updating
+an existing installation may require uninstalling it first. Back up saves
+(Settings → Export saves) before uninstalling.
 
 ## License
 

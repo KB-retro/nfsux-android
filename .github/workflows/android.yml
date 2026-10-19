@@ -1,8 +1,7 @@
 name: Android APK
 
+# Manual only: the APK holds code recompiled from the game.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -85,4 +84,4 @@ jobs:
         with:
           name: nfsu1-android-arm64-debug-${{ github.sha }}
           path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 14
+          retention-days: 1

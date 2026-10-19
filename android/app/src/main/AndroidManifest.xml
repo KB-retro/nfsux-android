@@ -4,7 +4,7 @@
     <uses-feature android:name="android.hardware.vulkan.version" android:version="0x00401000" android:required="true" />
     <uses-feature android:name="android.hardware.gamepad" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-    <application android:label="NFS Underground" android:theme="@android:style/Theme.Material.NoActionBar"
+    <application android:label="@string/app_name" android:theme="@android:style/Theme.Material.NoActionBar"
         android:appCategory="game"
         android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
