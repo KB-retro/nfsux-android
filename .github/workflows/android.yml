@@ -67,8 +67,6 @@ jobs:
             echo "nfsu.xbe=$RUNNER_TEMP/default.xbe"
           } > local.properties
 
-      - uses: gradle/actions/setup-gradle@v4
-
       - name: Build
         run: |
           set -o pipefail
