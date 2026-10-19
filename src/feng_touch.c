@@ -609,12 +609,13 @@ uint32_t touch_preview_screen(void)
         uint32_t handler = vtable ? MEM32(vtable + 4) : 0;
         if (vtable == 0x001FDD74u || vtable == 0x001FB8F4u ||
             vtable == 0x001FC1ACu || vtable == 0x001FBFCCu ||
+            vtable == 0x001FBDB0u ||
             vtable == 0x001FC26Cu || vtable == 0x001FC278u ||
             vtable == 0x001FC2BCu || vtable == 0x001FE45Cu ||
             vtable == 0x001FE630u || vtable == 0x001FE790u ||
             vtable == 0x001FE7BCu)
             return screen; /* ColorPicker, QuickRaceCarSelect, MainMenuCarCustomize,
-                            * ChooseCareerCarScreen */
+                            * ChooseCareerCarScreen, UndergroundTradeCarScreen */
         return handler >= 0x000EB000u && handler < 0x000F7000u &&
             MEM32(screen + 0x48) == 0x001FF870u ? screen : 0;
     }

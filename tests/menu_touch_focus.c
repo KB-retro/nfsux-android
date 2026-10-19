@@ -883,14 +883,15 @@ int main(void)
     /* Gaps beside small carousel logos capture immediately, with no hold.
      * Include the top edge, above the logo and its former 16-pixel margin.
      * A tap in a gap does nothing; its swipe cannot orbit the camera. */
-    for (unsigned browser = 0; browser < 7; browser++) {
-        /* Both garages, Quick Race and the first Underground car selection
+    for (unsigned browser = 0; browser < 8; browser++) {
+        /* Garages, Quick Race, career selection, trade-in and rewards
          * share swipe capture and camera boundaries despite native offsets. */
-        MEM32(screen) = browser == 6 ? 0x1FC2BC : browser == 5 ? 0x1FC278 : browser == 4 ? 0x1FC26C :
+        MEM32(screen) = browser == 7 ? 0x1FBDB0 : browser == 6 ? 0x1FC2BC : browser == 5 ? 0x1FC278 : browser == 4 ? 0x1FC26C :
             browser == 3 ? 0x1FBFCC :
             browser == 2 ? 0x1FB8F4 : browser ? 0x1FC384 : 0x1FC1AC;
-        MEM32(screen + (browser >= 5 ? 0x3C : 0x48)) = 0x1FF870;
-        MEM32(screen + (browser >= 5 ? 0x48 : browser == 2 ? 0x58 : 0x54)) = 0x2E400;
+        MEM32(screen + (browser == 5 || browser == 6 ? 0x3C : 0x48)) = 0x1FF870;
+        MEM32(screen + (browser == 5 || browser == 6 ? 0x48 : browser == 2 ? 0x58 : 0x54)) = 0x2E400;
+        MEM32(0x1FBDB0 + 4) = 0xB75E0; /* UndergroundTradeCarScreen */
         MEM32(0x1FBFCC + 4) = 0xB7DD0; /* ChooseCareerCarScreen */
         MEM32(0x1FC384 + 4) = 0xEEB80; /* Underground garage controller */
         before_actions = controller_selects;
@@ -901,10 +902,10 @@ int main(void)
         expected_message = 0xB5971BF1; tap(.7f, no);
         MEM32(no + 0x10) = 0x12345678;
         draw_bounds();
-        expected_message = browser == 2 || browser >= 4 ? 0x406415E3 : 0x0C407210;
+        expected_message = browser == 2 || (browser >= 4 && browser <= 6) ? 0x406415E3 : 0x0C407210;
         tap(.7f, no);
         assert(controller_selects == before_actions + 3);
-        if (browser >= 4) {
+        if (browser >= 4 && browser <= 6) {
             /* Reward captions activate the native selection even when the
              * asset marks them noninteractive. Hidden captions cannot fire. */
             MEM32(yes + 0x10) = browser == 6 ? 0xB6640DCC : browser == 4 ? 0x0B7F2D7C :

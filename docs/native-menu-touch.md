@@ -86,6 +86,12 @@ inert gap taps and exclusive camera orbit below the strip. The host fixture
 checks this screen alongside both garage entry paths and Quick Race.
 Physical-device acceptance remains pending.
 
+Choose Trade Car (UndergroundTradeCarScreen, vtable 1FBDB0) uses the same
+shared carousel and camera path. B73F0 constructs its browser at +48 (selected
+node +54); B75E0 accepts MouseClick/Select and routes Left/Right to B7190.
+The host fixture covers arrow taps, selection, gap swipes and camera ownership
+alongside the other car browsers. APK/device validation remains pending.
+
 ```sh
 cc -O1 -D__ANDROID__ -ffunction-sections -fdata-sections -Isrc \
   -Iandroid/app/build/generated/recomp tests/menu_touch_focus.c \
