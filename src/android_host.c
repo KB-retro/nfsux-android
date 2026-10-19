@@ -49,6 +49,8 @@ int android_host_boot(int argc, char **argv)
     /* Launcher settings first; a hand-edited env file overrides them. */
     android_env_load("nfsu1x_launcher.txt");
     android_env_load("nfsu1x_env.txt");
+    /* Spanish unless the launcher or the env file chose another language. */
+    setenv("RECOMP_LANGUAGE", "5", 0);
     char diagnostics[PROP_VALUE_MAX] = {0};
     __system_property_get("debug.nfsu.diagnostics", diagnostics);
     nfsu_diagnostics_enabled = strcmp(diagnostics, "1") == 0;

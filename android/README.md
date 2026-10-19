@@ -50,7 +50,7 @@ enabled. See [native menu touch](../docs/native-menu-touch.md) for scope and tes
 Once the saved game folder passes validation, the launcher shows **Play**,
 **Settings** and **Change game folder** instead of starting at once. Settings
 can turn on **Start the game automatically** (1.5 s delay; opening Settings
-cancels it). A newly selected folder still starts the game directly.
+cancels it). A newly selected folder never starts the game on its own.
 
 Settings apply at the next game start:
 
@@ -70,7 +70,7 @@ pixels; menu touch follows the same letterbox.
 
 `RECOMP_LANGUAGE` is the dashboard language the emulated kernel reports
 through `XC_LANGUAGE` (1 English, 3 German, 4 French, 5 Spanish, 6 Italian;
-default 1). The NTSC-U boot code (0x11190) maps only English, French and
+Android default 5, Spanish, set in android_host.c; 1 elsewhere). The NTSC-U boot code (0x11190) maps only English, French and
 German and falls back to English, so `recomp_manual.c` overrides it: any of
 the five returns its id in the game's language table (0x255258), and the
 game loads `LANGUAGES\LANGUAGE_<NAME>.BIN`. The NTSC-U disc carries all of
@@ -94,7 +94,7 @@ Russian and Spanish and follow the system language.
 ## Experimental 60 FPS
 
 In the in-game **Options -> Camera** menu, set **Frame Rate** to **60 FPS**.
-The default is **30 FPS**; the choice is saved in `nfsu1x_options.txt`
+The Android default is **60 FPS** (30 FPS elsewhere); the choice is saved in `nfsu1x_options.txt`
 alongside the other port options and applies at the next race frame.
 This changes NFSU1's D3D presentation interval from two vblanks to one,
 while keeping the kernel clock and simulation timing unchanged. Actual frame

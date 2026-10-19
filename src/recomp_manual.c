@@ -985,7 +985,11 @@ static const int s_scale_pct[] = { 100, 150, 200, 250 };
 static const int s_aniso_lvl[] = { 1, 2, 4, 8, 16 };
 
 static int s_blur = 1;                  /* native blur enabled by default */
+#ifdef __ANDROID__
+static int s_fps60 = 1;                 /* experimental; Android defaults to 60 FPS */
+#else
 static int s_fps60;                     /* experimental; default 30 FPS */
+#endif
 static int s_refl = 1;                  /* 0 off, 1 on */
 static int s_scale_idx = 1;             /* into s_scale_pct: 1.5x */
 static int s_scale_saved;               /* nfsu1x_options.txt had scale= */

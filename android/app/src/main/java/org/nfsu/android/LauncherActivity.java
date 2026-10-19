@@ -127,11 +127,9 @@ public final class LauncherActivity extends Activity {
                             showMenu(getString(R.string.launcher_other_release, regionName(release.region)));
                         } else if (result != null) {
                             showMenu(getString(R.string.launcher_unavailable));
-                        } else if (persistSelection) {
-                            // A folder the user has just chosen starts at once, as before.
-                            startGame();
                         } else {
-                            showReady();
+                            // Never start on its own after choosing a folder; Play does.
+                            showReady(!persistSelection);
                         }
                     }
                 });
@@ -140,7 +138,7 @@ public final class LauncherActivity extends Activity {
     }
 
     /** The saved folder is valid: offer Play and Settings, or start after a short delay. */
-    private void showReady() {
+    private void showReady(boolean allowAutoStart) {
         folderReady = true;
         ((TextView) findViewById(R.id.launcher_heading)).setText(R.string.launcher_ready_title);
         ((TextView) findViewById(R.id.launcher_description)).setText(R.string.launcher_ready_description);
@@ -150,7 +148,7 @@ public final class LauncherActivity extends Activity {
         play.setVisibility(View.VISIBLE);
         play.requestFocus();
         status.setVisibility(View.VISIBLE);
-        if (LauncherSettings.autoStart(this)) {
+        if (allowAutoStart && LauncherSettings.autoStart(this)) {
             status.setText(R.string.launcher_auto_starting);
             handler.postDelayed(autoStart, AUTO_START_DELAY_MS);
         } else {

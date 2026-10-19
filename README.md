@@ -20,14 +20,15 @@ sin emulador.
 - **Traducción al español** del launcher, los ajustes y el editor de controles
   táctiles (también en inglés y ruso; sigue el idioma del sistema).
 - **Pantalla de ajustes en el launcher**, sin editar archivos a mano:
-  - Gráficos: 30/60 FPS, escala de resolución, FXAA, filtro anisotrópico,
+  - Gráficos: 60 FPS por defecto (o 30), escala de resolución, FXAA, filtro anisotrópico,
     reflejos, desenfoque/bloom y píxeles cuadrados.
   - Formato de imagen: automático, panorámico 16:9 o clásico 4:3. En
     automático, las pantallas 4:3 (por ejemplo consolas retro Android) usan la
     imagen 4:3 original a pantalla completa, sin franjas negras.
   - Volumen general.
-  - Idioma del juego: inglés, español, francés, alemán o italiano. El disco
-    USA ya trae los textos de todos; las voces siguen en inglés.
+  - Idioma del juego: español por defecto, o inglés, francés, alemán o
+    italiano. El disco USA ya trae los textos de todos; las voces siguen en
+    inglés, y los vídeos que no estén en el idioma elegido se ven en inglés.
   - Inicio automático opcional.
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de

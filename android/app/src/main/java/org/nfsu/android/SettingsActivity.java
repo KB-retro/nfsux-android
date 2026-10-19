@@ -49,7 +49,7 @@ public final class SettingsActivity extends Activity {
 
         section(R.string.settings_section_graphics);
         frameRate = choice(R.string.settings_frame_rate, R.array.settings_frame_rates,
-            settings.option("fps", 30) == 60 ? 1 : 0);
+            settings.option("fps", 60) == 60 ? 1 : 0);
         // 1.5x when nothing chose a scale yet, as in recomp_manual.c.
         initialScale = LauncherSettings.indexOf(LauncherSettings.SCALES, settings.option("scale", 150), 1);
         scale = choice(R.string.settings_scale, R.array.settings_scales, initialScale);
@@ -70,7 +70,7 @@ public final class SettingsActivity extends Activity {
 
         section(R.string.settings_section_language);
         language = choice(R.string.settings_language, R.array.settings_languages,
-            LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 1), 0));
+            LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 5), 0));
         hint(R.string.settings_language_hint);
 
         section(R.string.settings_section_saves);
