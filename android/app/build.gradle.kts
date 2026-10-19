@@ -126,9 +126,11 @@ android {
         applicationId = "org.nfsu.android"
         minSdk = 30
         targetSdk = 37
-        // CI builds count up so Android treats each APK as an update.
-        versionCode = providers.environmentVariable("GITHUB_RUN_NUMBER").orNull?.toIntOrNull() ?: 1
-        versionName = "0.1.0"
+        // CI builds count up so Android treats each APK as an update, and the
+        // visible version (0.1.<run>) changes with them.
+        val runNumber = providers.environmentVariable("GITHUB_RUN_NUMBER").orNull?.toIntOrNull()
+        versionCode = runNumber ?: 1
+        versionName = "0.1.${runNumber ?: 0}"
         buildConfigField("String", "BUILD_COMMIT", "\"${buildCommit.get().take(12)}\"")
         buildConfigField("String", "BUILD_COMMIT_FULL", "\"${buildCommit.get()}\"")
         ndk { abiFilters += "arm64-v8a" }
