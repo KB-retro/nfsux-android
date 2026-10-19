@@ -66,7 +66,20 @@ jobs:
             echo "nfsu.xbe=$RUNNER_TEMP/default.xbe"
           } > local.properties
 
+      - name: Signing key
+        env:
+          NFSU_KEYSTORE_B64: ${{ secrets.NFSU_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$NFSU_KEYSTORE_B64" ]; then
+            echo "::warning::No NFSU_KEYSTORE_B64 secret: the APK gets a new debug key and cannot update the previous install."
+            exit 0
+          fi
+          echo "$NFSU_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/nfsux.jks"
+          echo "NFSU_KEYSTORE=$RUNNER_TEMP/nfsux.jks" >> "$GITHUB_ENV"
+
       - name: Build
+        env:
+          NFSU_KEYSTORE_PASSWORD: ${{ secrets.NFSU_KEYSTORE_PASSWORD }}
         run: |
           set -o pipefail
           ./gradlew --no-daemon assembleDebug lintDebug 2>&1 | tee "$RUNNER_TEMP/build.log"

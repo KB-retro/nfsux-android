@@ -126,7 +126,8 @@ android {
         applicationId = "org.nfsu.android"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
+        // CI builds count up so Android treats each APK as an update.
+        versionCode = providers.environmentVariable("GITHUB_RUN_NUMBER").orNull?.toIntOrNull() ?: 1
         versionName = "0.1.0"
         buildConfigField("String", "BUILD_COMMIT", "\"${buildCommit.get().take(12)}\"")
         buildConfigField("String", "BUILD_COMMIT_FULL", "\"${buildCommit.get()}\"")
@@ -139,6 +140,20 @@ android {
                 targets += listOf("nfsu2_recomp", "SDL2")
             }
         }
+    }
+    // A fixed key (NFSU_KEYSTORE, a .jks path, plus NFSU_KEYSTORE_PASSWORD) keeps
+    // every build installable over the previous one; without it the debug key is used.
+    val stableKeystore = providers.environmentVariable("NFSU_KEYSTORE").orNull
+    if (stableKeystore != null) {
+        signingConfigs {
+            create("stable") {
+                storeFile = file(stableKeystore)
+                storePassword = providers.environmentVariable("NFSU_KEYSTORE_PASSWORD").get()
+                keyAlias = "nfsux"
+                keyPassword = providers.environmentVariable("NFSU_KEYSTORE_PASSWORD").get()
+            }
+        }
+        buildTypes.getByName("debug").signingConfig = signingConfigs.getByName("stable")
     }
     externalNativeBuild {
         cmake {
