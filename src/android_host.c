@@ -46,6 +46,8 @@ int android_host_boot(int argc, char **argv)
     }
     if (!freopen(log_path, "w", stdout) || dup2(fileno(stdout), fileno(stderr)) < 0)
         return 0;
+    /* Launcher settings first; a hand-edited env file overrides them. */
+    android_env_load("nfsu1x_launcher.txt");
     android_env_load("nfsu1x_env.txt");
     char diagnostics[PROP_VALUE_MAX] = {0};
     __system_property_get("debug.nfsu.diagnostics", diagnostics);

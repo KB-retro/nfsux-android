@@ -75,7 +75,7 @@ public final class GameActivity extends SDLActivity {
         toolbar.setPadding(12, 4, 12, 4);
         toolbar.setBackgroundColor(0xEE102F40);
         android.widget.TextView title = new android.widget.TextView(this);
-        title.setText("Перетащите кнопки • панель тоже можно двигать");
+        title.setText(R.string.editor_hint);
         title.setPadding(8, 8, 8, 8);
         title.setOnTouchListener(new View.OnTouchListener() {
             private float offsetX, offsetY;
@@ -96,7 +96,7 @@ public final class GameActivity extends SDLActivity {
         toolbar.addView(title);
         android.widget.LinearLayout actions = new android.widget.LinearLayout(this);
         toolbar.addView(actions);
-        addEditorButton(actions, "Сохранить", new View.OnClickListener() {
+        addEditorButton(actions, getString(R.string.action_save), new View.OnClickListener() {
             @Override public void onClick(View view) {
                 try {
                     touchLayoutStore.save(raceControls.getLayout());
@@ -104,20 +104,20 @@ public final class GameActivity extends SDLActivity {
                 } catch (java.io.IOException exception) {
                     android.util.Log.e("TouchLayout", "Cannot save layout", exception);
                     android.widget.Toast.makeText(GameActivity.this,
-                            "Не удалось сохранить раскладку", android.widget.Toast.LENGTH_LONG).show();
+                            R.string.editor_save_failed, android.widget.Toast.LENGTH_LONG).show();
                 }
             }
         });
-        addEditorButton(actions, "Сброс", new View.OnClickListener() {
+        addEditorButton(actions, getString(R.string.editor_reset), new View.OnClickListener() {
             @Override public void onClick(View view) { raceControls.resetLayout(); }
         });
-        addEditorButton(actions, "Отмена", new View.OnClickListener() {
+        addEditorButton(actions, getString(R.string.action_cancel), new View.OnClickListener() {
             @Override public void onClick(View view) { closeTouchEditor(false); }
         });
         android.content.SharedPreferences editorPreferences =
                 getSharedPreferences("touch-editor", MODE_PRIVATE);
         android.widget.CheckBox snap = new android.widget.CheckBox(this);
-        snap.setText("Привязка к сетке");
+        snap.setText(R.string.editor_snap);
         snap.setTextColor(android.graphics.Color.WHITE);
         snap.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF55BCD8));
         snap.setChecked(editorPreferences.getBoolean("snap_to_grid", false));
@@ -140,7 +140,7 @@ public final class GameActivity extends SDLActivity {
                 int selected = raceControls.getSelectedButton();
                 sizeSlider.setEnabled(selected >= 0);
                 sizeSlider.setProgress(Math.round((raceControls.getSelectedSize() - TouchLayout.MIN_SIZE)*100));
-                sizeLabel.setText(selected < 0 ? "Выберите кнопку для изменения размера"
+                sizeLabel.setText(selected < 0 ? getString(R.string.editor_select_button)
                         : TouchLayout.IDS[selected] + " • " + Math.round(raceControls.getSelectedSize()*100) + "%");
             }
         };
@@ -157,7 +157,7 @@ public final class GameActivity extends SDLActivity {
         });
         updateSize.run();
         touchPresets = new TouchPresetController(this, raceControls, gameDirectory(), updateSize);
-        addEditorButton(actions, "Пресеты", new View.OnClickListener() {
+        addEditorButton(actions, getString(R.string.editor_presets), new View.OnClickListener() {
             @Override public void onClick(View view) { touchPresets.show(); }
         });
         editorToolbar = toolbar;

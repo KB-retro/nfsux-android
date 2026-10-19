@@ -121,7 +121,7 @@ NTSTATUS __stdcall xbox_XeUnloadSection(PXBE_SECTION_HEADER Section)
  * SMBus. For recompilation, we return sensible defaults:
  *   - Region: North America
  *   - Video: NTSC, widescreen (RECOMP_WIDESCREEN=0 for 4:3)
- *   - Language: English
+ *   - Language: English (RECOMP_LANGUAGE=1..9 picks another XC_LANGUAGE_*)
  *   - Audio: Stereo, Dolby Digital
  *   - DVD Region: Region 1 (North America)
  * ============================================================================ */
@@ -136,6 +136,20 @@ int xbox_video_widescreen(void)
     return ws;
 }
 
+/* Dashboard language: 1 English, 2 Japanese, 3 German, 4 French, 5 Spanish,
+ * 6 Italian, 7 Korean, 8 Chinese, 9 Portuguese. Titles pick their text
+ * from it and fall back to English when they do not carry the language. */
+static ULONG xbox_language(void)
+{
+    static ULONG lang;
+    if (!lang) {
+        const char *e = getenv("RECOMP_LANGUAGE");
+        int v = e ? atoi(e) : 1;
+        lang = v >= 1 && v <= 9 ? (ULONG)v : 1;
+    }
+    return lang;
+}
+
 NTSTATUS __stdcall xbox_ExQueryNonVolatileSetting(
     ULONG ValueIndex, PULONG Type, PVOID Value, ULONG ValueLength, PULONG ResultLength)
 {
@@ -147,9 +161,8 @@ NTSTATUS __stdcall xbox_ExQueryNonVolatileSetting(
 
     switch (ValueIndex) {
     case XC_LANGUAGE:
-        /* English = 1 */
         if (ValueLength >= sizeof(ULONG)) {
-            *(PULONG)Value = 1;
+            *(PULONG)Value = xbox_language();
             if (Type) *Type = 4; /* REG_DWORD */
             if (ResultLength) *ResultLength = sizeof(ULONG);
         }

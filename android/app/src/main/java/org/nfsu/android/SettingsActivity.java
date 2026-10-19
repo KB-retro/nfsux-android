@@ -1,0 +1,180 @@
+package org.nfsu.android;
+
+import android.app.Activity;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.io.IOException;
+
+/** Launcher settings: the in-game Camera rows plus runtime switches, applied at the next start. */
+public final class SettingsActivity extends Activity {
+    private LauncherSettings settings;
+    private LinearLayout rows;
+    private Spinner frameRate, scale, aniso, language;
+    private Switch fxaa, reflections, blur, square, widescreen, autoStart;
+    private SeekBar volume;
+    private int initialScale;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_settings);
+        View panel = findViewById(R.id.settings_panel);
+        int width = Math.min(getResources().getConfiguration().screenWidthDp - 32, 640);
+        panel.getLayoutParams().width = (int) (width * getResources().getDisplayMetrics().density);
+        rows = findViewById(R.id.settings_rows);
+        settings = new LauncherSettings(this);
+        try {
+            settings.load();
+        } catch (IOException exception) {
+            Log.w("NFSU", "Cannot read settings", exception);
+        }
+
+        section(R.string.settings_section_graphics);
+        frameRate = choice(R.string.settings_frame_rate, R.array.settings_frame_rates,
+            settings.option("fps", 30) == 60 ? 1 : 0);
+        // 1.5x when nothing chose a scale yet, as in recomp_manual.c.
+        initialScale = LauncherSettings.indexOf(LauncherSettings.SCALES, settings.option("scale", 150), 1);
+        scale = choice(R.string.settings_scale, R.array.settings_scales, initialScale);
+        fxaa = toggle(R.string.settings_fxaa, settings.option("fxaa", 1) != 0);
+        aniso = choice(R.string.settings_aniso, R.array.settings_aniso_levels,
+            LauncherSettings.indexOf(LauncherSettings.ANISO, settings.option("aniso", 16), 4));
+        reflections = toggle(R.string.settings_reflections, settings.option("reflections", 1) != 0);
+        blur = toggle(R.string.settings_blur, settings.option("blur", 1) != 0);
+        square = toggle(R.string.settings_square, settings.option("square", 1) != 0);
+        widescreen = toggle(R.string.settings_widescreen, settings.envValue("RECOMP_HORPLUS", 1) != 0);
+
+        section(R.string.settings_section_audio);
+        volume = slider(R.string.settings_volume, settings.envValue("RECOMP_AUDIO_VOLUME", 100));
+
+        section(R.string.settings_section_language);
+        language = choice(R.string.settings_language, R.array.settings_languages,
+            LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 1), 0));
+        hint(R.string.settings_language_hint);
+
+        section(R.string.settings_section_launcher);
+        autoStart = toggle(R.string.settings_auto_start, LauncherSettings.autoStart(this));
+
+        findViewById(R.id.settings_cancel).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { finish(); }
+        });
+        findViewById(R.id.settings_save).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { save(); }
+        });
+    }
+
+    private void save() {
+        settings.options.put("fps", frameRate.getSelectedItemPosition() == 1 ? "60" : "30");
+        // Leave RECOMP_GL_SCALE in charge until a scale is chosen here or in game.
+        if (settings.options.containsKey("scale") || scale.getSelectedItemPosition() != initialScale)
+            settings.options.put("scale", Integer.toString(LauncherSettings.SCALES[scale.getSelectedItemPosition()]));
+        settings.options.put("fxaa", fxaa.isChecked() ? "1" : "0");
+        settings.options.put("aniso", Integer.toString(LauncherSettings.ANISO[aniso.getSelectedItemPosition()]));
+        settings.options.put("reflections", reflections.isChecked() ? "1" : "0");
+        settings.options.put("blur", blur.isChecked() ? "1" : "0");
+        settings.options.put("square", square.isChecked() ? "1" : "0");
+        settings.env.put("RECOMP_HORPLUS", widescreen.isChecked() ? "1" : "0");
+        settings.env.put("RECOMP_AUDIO_VOLUME", Integer.toString(volume.getProgress()));
+        settings.env.put("RECOMP_LANGUAGE",
+            Integer.toString(LauncherSettings.LANGUAGES[language.getSelectedItemPosition()]));
+        try {
+            settings.save();
+        } catch (IOException exception) {
+            Log.w("NFSU", "Cannot save settings", exception);
+            Toast.makeText(this, R.string.settings_save_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+        LauncherSettings.setAutoStart(this, autoStart.isChecked());
+        Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private int dp(int value) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics());
+    }
+
+    private TextView label(int text, float size, int color) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(size);
+        view.setTextColor(color);
+        return view;
+    }
+
+    private void section(int title) {
+        TextView view = label(title, 12, 0xFF95A4A8);
+        view.setLetterSpacing(0.18f);
+        view.setPadding(0, dp(20), 0, dp(4));
+        rows.addView(view);
+    }
+
+    private void hint(int text) {
+        TextView view = label(text, 12, 0xFF87929C);
+        view.setPadding(0, dp(2), 0, 0);
+        rows.addView(view);
+    }
+
+    private LinearLayout row(int title) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(48));
+        TextView name = label(title, 15, Color.WHITE);
+        row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        rows.addView(row);
+        return row;
+    }
+
+    private Spinner choice(int title, int items, int selected) {
+        LinearLayout row = row(title);
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, items,
+            android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(Math.max(0, Math.min(selected, adapter.getCount() - 1)));
+        row.addView(spinner, new LinearLayout.LayoutParams(dp(170), LinearLayout.LayoutParams.WRAP_CONTENT));
+        return spinner;
+    }
+
+    private Switch toggle(int title, boolean checked) {
+        LinearLayout row = row(title);
+        Switch toggle = new Switch(this);
+        toggle.setChecked(checked);
+        row.addView(toggle);
+        // The whole row toggles, which also suits controller focus.
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { toggle.toggle(); }
+        });
+        return toggle;
+    }
+
+    private SeekBar slider(int title, int value) {
+        LinearLayout row = row(title);
+        final TextView percent = label(R.string.settings_volume, 15, 0xFFABB4BC);
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(100);
+        bar.setProgress(Math.max(0, Math.min(100, value)));
+        percent.setText(bar.getProgress() + "%");
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                percent.setText(progress + "%");
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+        row.addView(bar, new LinearLayout.LayoutParams(dp(130), LinearLayout.LayoutParams.WRAP_CONTENT));
+        row.addView(percent, new LinearLayout.LayoutParams(dp(48), LinearLayout.LayoutParams.WRAP_CONTENT));
+        return bar;
+    }
+}

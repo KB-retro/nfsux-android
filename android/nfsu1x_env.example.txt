@@ -35,3 +35,7 @@ RECOMP_QUIET=1
 # RECOMP_FPS_LOG=1
 # RECOMP_VK_TRACE=1
 # XBOX_LOG_LEVEL=3
+
+# Dashboard language reported to the game (also set in launcher Settings):
+# 1 English, 3 German, 4 French, 5 Spanish, 6 Italian.
+# RECOMP_LANGUAGE=5

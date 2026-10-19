@@ -45,6 +45,37 @@ settings arrows and complete touch-only navigation are not implemented yet;
 keep the controller available. Pause/results and racing touch controls are not
 enabled. See [native menu touch](../docs/native-menu-touch.md) for scope and tests.
 
+## Launcher settings and languages
+
+Once the saved game folder passes validation, the launcher shows **Play**,
+**Settings** and **Change game folder** instead of starting at once. Settings
+can turn on **Start the game automatically** (1.5 s delay; opening Settings
+cancels it). A newly selected folder still starts the game directly.
+
+Settings apply at the next game start:
+
+- Graphics rows shared with the in-game Options -> Camera screen, written to
+  `nfsu1x_options.txt` (frame rate, resolution scale, FXAA, anisotropic
+  filtering, car reflections, blur/bloom, square pixels). Unknown keys such as
+  the touch sensor mode are kept.
+- Runtime switches written to `nfsu1x_launcher.txt` and loaded before
+  `nfsu1x_env.txt`, which still overrides them: `RECOMP_HORPLUS`
+  (widescreen), `RECOMP_AUDIO_VOLUME` (0-100) and `RECOMP_LANGUAGE`.
+
+`RECOMP_LANGUAGE` is the dashboard language the emulated kernel reports
+through `XC_LANGUAGE` (1 English, 3 German, 4 French, 5 Spanish, 6 Italian;
+default 1). The game shows a language only if its `LANGUAGES` folder contains
+it and the executable supports it, otherwise it stays in English.
+
+The APK runs code recompiled from the NTSC-U `default.xbe` and only starts
+that file. When the folder holds another NFSU release (for example the
+European PAL disc in Spanish), the launcher names the release instead of the
+generic error. Placing the NTSC-U `default.xbe` next to the PAL disc files is
+untested: the data formats of the two releases have not been compared.
+
+The launcher, settings and touch-control editor are translated into English,
+Russian and Spanish and follow the system language.
+
 ## Experimental 60 FPS
 
 In the in-game **Options -> Camera** menu, set **Frame Rate** to **60 FPS**.

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_title">SELECCIONAR ARCHIVOS DEL JUEGO</string>
+    <string name="launcher_description">Elige la carpeta del juego de Xbox extraído que contiene default.xbe, CARS y TRACKS. Los archivos se quedan en tu almacenamiento.</string>
+    <string name="launcher_choose">SELECCIONAR CARPETA  ›</string>
+    <string name="launcher_checking">Comprobando los archivos del juego…</string>
+    <string name="launcher_unavailable">ARCHIVOS DEL JUEGO NO DISPONIBLES\nVuelve a conectar el almacenamiento o selecciona de nuevo la carpeta del juego. Comprueba que contiene la versión de Xbox compatible.</string>
+    <string name="launcher_logo">Need for Speed Underground</string>
+    <string name="launcher_platform">RECOMPILACIÓN DE XBOX / ANDROID</string>
+    <string name="launcher_credits">&lt;a href="https://github.com/cherepavel/nfsu1-android/commit/%2$s"&gt;Compilación %1$s&lt;/a&gt;　/　&lt;a href="https://github.com/cherepavel/nfsu1-android"&gt;Repositorio&lt;/a&gt;　/　Port de &lt;a href="https://github.com/cherepavel"&gt;cherepavel&lt;/a&gt;</string>
+    <string name="port_credits_title">Port para Android</string>
+    <string name="port_credits_close">Cerrar</string>
+    <string name="port_credits_body">Port para Android de &lt;a href="https://github.com/cherepavel"&gt;cherepavel&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/cherepavel/nfsu1-android/commit/%2$s"&gt;Compilación %1$s&lt;/a&gt;&lt;br&gt;Repositorio: &lt;a href="https://github.com/cherepavel/nfsu1-android"&gt;nfsu1-android&lt;/a&gt;&lt;br&gt;&lt;br&gt;Basado en el port de &lt;a href="https://github.com/antoxa2584x"&gt;antoxa2584x&lt;/a&gt;&lt;br&gt;&lt;a href="https://github.com/antoxa2584x/nfsu1-sw"&gt;nfsu1-sw&lt;/a&gt;</string>
+</resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_play">JUGAR  ›</string>
+    <string name="launcher_settings">Ajustes</string>
+    <string name="launcher_change_folder">Cambiar carpeta del juego</string>
+    <string name="launcher_ready_title">LISTO PARA CORRER</string>
+    <string name="launcher_ready_description">Archivos del juego encontrados. Cambia los ajustes o empieza a jugar.</string>
+    <string name="launcher_ready_status">Los ajustes se aplican la próxima vez que se inicie el juego.</string>
+    <string name="launcher_auto_starting">Iniciando el juego… Abre Ajustes para detenerlo.</string>
+    <string name="launcher_other_release">VERSIÓN DEL JUEGO NO COMPATIBLE\nEste default.xbe es de la versión %1$s. Esta APK ejecuta código recompilado del default.xbe norteamericano (NTSC-U) y solo puede iniciar ese archivo. Pon el default.xbe NTSC-U en la carpeta; el resto de archivos del disco pueden ser de tu versión (experimental). Después elige el idioma del juego en Ajustes.</string>
+    <string name="launcher_region_pal">europea (PAL)</string>
+    <string name="launcher_region_japan">japonesa</string>
+    <string name="launcher_region_other">otra</string>
+    <string name="settings_title">AJUSTES</string>
+    <string name="settings_note">Se guardan para el próximo inicio del juego. Las opciones gráficas también se pueden cambiar en el juego en Options → Camera.</string>
+    <string name="settings_section_graphics">GRÁFICOS</string>
+    <string name="settings_section_audio">SONIDO</string>
+    <string name="settings_section_language">IDIOMA</string>
+    <string name="settings_section_launcher">LAUNCHER</string>
+    <string name="settings_frame_rate">Fotogramas por segundo</string>
+    <string name="settings_scale">Escala de resolución</string>
+    <string name="settings_fxaa">Antialiasing (FXAA)</string>
+    <string name="settings_aniso">Filtro anisotrópico</string>
+    <string name="settings_reflections">Reflejos en los coches</string>
+    <string name="settings_blur">Desenfoque y resplandor</string>
+    <string name="settings_square">Píxeles cuadrados</string>
+    <string name="settings_widescreen">Pantalla panorámica 16:9 (Hor+)</string>
+    <string name="settings_volume">Volumen general</string>
+    <string name="settings_language">Idioma del juego</string>
+    <string name="settings_language_hint">El juego usa este idioma si su carpeta LANGUAGES lo incluye; si no, sigue en inglés. Los discos europeos traen más idiomas que el norteamericano.</string>
+    <string name="settings_auto_start">Iniciar el juego automáticamente</string>
+    <string name="settings_saved">Ajustes guardados</string>
+    <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
+    <string-array name="settings_frame_rates">
+        <item>30 FPS</item>
+        <item>60 FPS (experimental)</item>
+    </string-array>
+    <string-array name="settings_aniso_levels">
+        <item>Desactivado</item>
+        <item>2x</item>
+        <item>4x</item>
+        <item>8x</item>
+        <item>16x</item>
+    </string-array>
+</resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_play">ИГРАТЬ  ›</string>
+    <string name="launcher_settings">Настройки</string>
+    <string name="launcher_change_folder">Сменить папку игры</string>
+    <string name="launcher_ready_title">ВСЁ ГОТОВО К ГОНКЕ</string>
+    <string name="launcher_ready_description">Файлы игры найдены. Настройте игру или начните гонку.</string>
+    <string name="launcher_ready_status">Настройки применяются при следующем запуске игры.</string>
+    <string name="launcher_auto_starting">Запуск игры… Откройте настройки, чтобы остановить.</string>
+    <string name="launcher_other_release">НЕПОДДЕРЖИВАЕМАЯ ВЕРСИЯ ИГРЫ\nЭтот default.xbe из версии %1$s. APK содержит код, перекомпилированный из североамериканского (NTSC-U) default.xbe, и запускает только его. Положите в папку default.xbe NTSC-U; остальные файлы диска можно взять из вашей версии (экспериментально). Затем выберите язык игры в настройках.</string>
+    <string name="launcher_region_pal">европейской (PAL)</string>
+    <string name="launcher_region_japan">японской</string>
+    <string name="launcher_region_other">другой</string>
+    <string name="settings_title">НАСТРОЙКИ</string>
+    <string name="settings_note">Сохраняются до следующего запуска игры. Графику можно менять и в игре: Options → Camera.</string>
+    <string name="settings_section_graphics">ГРАФИКА</string>
+    <string name="settings_section_audio">ЗВУК</string>
+    <string name="settings_section_language">ЯЗЫК</string>
+    <string name="settings_section_launcher">ЛАУНЧЕР</string>
+    <string name="settings_frame_rate">Частота кадров</string>
+    <string name="settings_scale">Масштаб разрешения</string>
+    <string name="settings_fxaa">Сглаживание (FXAA)</string>
+    <string name="settings_aniso">Анизотропная фильтрация</string>
+    <string name="settings_reflections">Отражения на машинах</string>
+    <string name="settings_blur">Размытие и свечение</string>
+    <string name="settings_square">Квадратные пиксели</string>
+    <string name="settings_widescreen">Широкий экран 16:9 (Hor+)</string>
+    <string name="settings_volume">Общая громкость</string>
+    <string name="settings_language">Язык игры</string>
+    <string name="settings_language_hint">Игра использует этот язык, если он есть в папке LANGUAGES; иначе остаётся английский. На европейских дисках языков больше, чем на североамериканском.</string>
+    <string name="settings_auto_start">Запускать игру автоматически</string>
+    <string name="settings_saved">Настройки сохранены</string>
+    <string name="settings_save_failed">Не удалось сохранить настройки</string>
+    <string-array name="settings_frame_rates">
+        <item>30 FPS</item>
+        <item>60 FPS (экспериментально)</item>
+    </string-array>
+    <string-array name="settings_aniso_levels">
+        <item>Выкл.</item>
+        <item>2x</item>
+        <item>4x</item>
+        <item>8x</item>
+        <item>16x</item>
+    </string-array>
+</resources>

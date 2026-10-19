@@ -35,9 +35,10 @@ final class TouchPresetController {
     boolean isPickingDocument() { return pickingDocument; }
 
     void show() {
-        new AlertDialog.Builder(activity).setTitle("Пресеты управления")
-                .setItems(new String[] {"Сохранить под именем", "Загрузить", "Импорт XML",
-                        "Экспорт XML", "Удалить"}, new DialogInterface.OnClickListener() {
+        new AlertDialog.Builder(activity).setTitle(R.string.presets_title)
+                .setItems(new String[] {activity.getString(R.string.presets_save_as),
+                        activity.getString(R.string.presets_load), activity.getString(R.string.presets_import),
+                        activity.getString(R.string.presets_export), activity.getString(R.string.action_delete)}, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface dialog, int which) {
                         if (which == 0) askName(controls.getLayout());
                         else if (which == 1) choosePreset(false);
@@ -45,7 +46,7 @@ final class TouchPresetController {
                         else if (which == 3) pickDocument(true);
                         else choosePreset(true);
                     }
-                }).setNegativeButton("Закрыть", null).show();
+                }).setNegativeButton(R.string.action_close, null).show();
     }
 
     private void message(String text) {
@@ -60,10 +61,10 @@ final class TouchPresetController {
     private void askName(final TouchLayout layout) {
         EditText input = new EditText(activity);
         input.setSingleLine(true);
-        input.setHint("Например: Планшет");
-        AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("Имя пресета")
-                .setView(input).setPositiveButton("Сохранить", null)
-                .setNegativeButton("Отмена", null).create();
+        input.setHint(R.string.preset_name_hint);
+        AlertDialog dialog = new AlertDialog.Builder(activity).setTitle(R.string.preset_name_title)
+                .setView(input).setPositiveButton(R.string.action_save, null)
+                .setNegativeButton(R.string.action_cancel, null).create();
         dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override public void onShow(DialogInterface shown) {
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new android.view.View.OnClickListener() {
@@ -71,15 +72,16 @@ final class TouchPresetController {
                         try {
                             String name = TouchPresetStore.validateName(input.getText().toString());
                             if (store.exists(name)) {
-                                new AlertDialog.Builder(activity).setTitle("Перезаписать «" + name + "»?")
-                                        .setPositiveButton("Перезаписать", new DialogInterface.OnClickListener() {
+                                new AlertDialog.Builder(activity).setTitle(activity.getString(R.string.preset_overwrite_title, name))
+                                        .setPositiveButton(R.string.preset_overwrite, new DialogInterface.OnClickListener() {
                                             @Override public void onClick(DialogInterface confirmation, int which) {
                                                 if (save(name, layout)) dialog.dismiss();
                                             }
-                                        }).setNegativeButton("Отмена", null).show();
+                                        }).setNegativeButton(R.string.action_cancel, null).show();
                             } else if (save(name, layout)) dialog.dismiss();
                         } catch (IllegalArgumentException exception) {
-                            input.setError(exception.getMessage());
+                            input.setError(activity.getString(TouchPresetStore.NAME_LENGTH.equals(exception.getMessage())
+                                    ? R.string.preset_name_length : R.string.preset_name_characters));
                         }
                     }
                 });
@@ -91,10 +93,10 @@ final class TouchPresetController {
     private boolean save(String name, TouchLayout layout) {
         try {
             store.save(name, layout);
-            message("Пресет сохранён: " + name);
+            message(activity.getString(R.string.preset_saved, name));
             return true;
         } catch (IOException exception) {
-            error("Не удалось сохранить пресет", exception);
+            error(R.string.preset_save_failed, exception);
             return false;
         }
     }
@@ -104,28 +106,28 @@ final class TouchPresetController {
         try {
             names = store.list();
         } catch (IOException exception) {
-            error("Не удалось прочитать список пресетов", exception);
+            error(R.string.preset_list_failed, exception);
             return;
         }
-        if (names.isEmpty()) { message("Сохранённых пресетов пока нет"); return; }
-        new AlertDialog.Builder(activity).setTitle(deleting ? "Удалить пресет" : "Загрузить пресет")
+        if (names.isEmpty()) { message(activity.getString(R.string.preset_none)); return; }
+        new AlertDialog.Builder(activity).setTitle(deleting ? R.string.preset_delete_title : R.string.preset_load_title)
                 .setItems(names.toArray(new String[0]), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface dialog, int which) {
                         String name = names.get(which);
                         if (deleting) {
-                            new AlertDialog.Builder(activity).setTitle("Удалить «" + name + "»?")
-                                    .setPositiveButton("Удалить", new DialogInterface.OnClickListener() {
+                            new AlertDialog.Builder(activity).setTitle(activity.getString(R.string.preset_delete_confirm, name))
+                                    .setPositiveButton(R.string.action_delete, new DialogInterface.OnClickListener() {
                                         @Override public void onClick(DialogInterface confirmation, int button) {
                                             try { store.delete(name); }
-                                            catch (IOException exception) { error("Не удалось удалить пресет", exception); }
+                                            catch (IOException exception) { error(R.string.preset_delete_failed, exception); }
                                         }
-                                    }).setNegativeButton("Отмена", null).show();
+                                    }).setNegativeButton(R.string.action_cancel, null).show();
                         } else {
                             try { apply(store.load(name)); }
-                            catch (IOException exception) { error("Пресет повреждён или недоступен", exception); }
+                            catch (IOException exception) { error(R.string.preset_corrupt, exception); }
                         }
                     }
-                }).setNegativeButton("Отмена", null).show();
+                }).setNegativeButton(R.string.action_cancel, null).show();
     }
 
     private void pickDocument(boolean exporting) {
@@ -142,7 +144,7 @@ final class TouchPresetController {
         } catch (ActivityNotFoundException exception) {
             pickingDocument = false;
             exportLayout = null;
-            error("Системный выбор файлов недоступен", exception);
+            error(R.string.preset_picker_unavailable, exception);
         }
     }
 
@@ -168,16 +170,16 @@ final class TouchPresetController {
                     if (output == null) throw new IOException("Cannot write document");
                     snapshot.write(output);
                 }
-                message("Пресет экспортирован");
+                message(activity.getString(R.string.preset_exported));
             }
         } catch (IOException | SecurityException exception) {
-            error(request == IMPORT ? "Не удалось импортировать пресет" : "Не удалось экспортировать пресет", exception);
+            error(request == IMPORT ? R.string.preset_import_failed : R.string.preset_export_failed, exception);
         }
         return true;
     }
 
-    private void error(String text, Exception exception) {
-        android.util.Log.w("TouchPresets", text, exception);
-        message(text);
+    private void error(int text, Exception exception) {
+        android.util.Log.w("TouchPresets", activity.getString(text), exception);
+        message(activity.getString(text));
     }
 }

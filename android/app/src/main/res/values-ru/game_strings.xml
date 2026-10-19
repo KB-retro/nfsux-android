@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_save">Сохранить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_delete">Удалить</string>
+    <string name="editor_hint">Перетащите кнопки • панель тоже можно двигать</string>
+    <string name="editor_save_failed">Не удалось сохранить раскладку</string>
+    <string name="editor_reset">Сброс</string>
+    <string name="editor_snap">Привязка к сетке</string>
+    <string name="editor_select_button">Выберите кнопку для изменения размера</string>
+    <string name="editor_presets">Пресеты</string>
+    <string name="presets_title">Пресеты управления</string>
+    <string name="presets_save_as">Сохранить под именем</string>
+    <string name="presets_load">Загрузить</string>
+    <string name="presets_import">Импорт XML</string>
+    <string name="presets_export">Экспорт XML</string>
+    <string name="preset_name_hint">Например: Планшет</string>
+    <string name="preset_name_title">Имя пресета</string>
+    <string name="preset_overwrite_title">Перезаписать «%1$s»?</string>
+    <string name="preset_overwrite">Перезаписать</string>
+    <string name="preset_saved">Пресет сохранён: %1$s</string>
+    <string name="preset_save_failed">Не удалось сохранить пресет</string>
+    <string name="preset_list_failed">Не удалось прочитать список пресетов</string>
+    <string name="preset_none">Сохранённых пресетов пока нет</string>
+    <string name="preset_delete_title">Удалить пресет</string>
+    <string name="preset_load_title">Загрузить пресет</string>
+    <string name="preset_delete_confirm">Удалить «%1$s»?</string>
+    <string name="preset_delete_failed">Не удалось удалить пресет</string>
+    <string name="preset_corrupt">Пресет повреждён или недоступен</string>
+    <string name="preset_picker_unavailable">Системный выбор файлов недоступен</string>
+    <string name="preset_exported">Пресет экспортирован</string>
+    <string name="preset_import_failed">Не удалось импортировать пресет</string>
+    <string name="preset_export_failed">Не удалось экспортировать пресет</string>
+    <string name="preset_name_length">Введите имя длиной от 1 до 48 символов</string>
+    <string name="preset_name_characters">Имя содержит недопустимые символы</string>
+</resources>

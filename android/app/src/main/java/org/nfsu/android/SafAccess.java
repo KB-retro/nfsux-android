@@ -111,10 +111,37 @@ final class SafAccess {
         return loadDirectory(key(path));
     }
 
+    /** The folder holds an NFSU executable from another release than the one this APK was built from. */
+    static final class OtherReleaseException extends IOException {
+        /** XBE certificate game region: 1 North America, 2 Japan, 4 rest of the world (PAL). */
+        final int region;
+        OtherReleaseException(int region) {
+            super("Unsupported default.xbe release, region " + region);
+            this.region = region;
+        }
+    }
+
+    private static int readInt(byte[] data, int offset) {
+        return (data[offset] & 255) | ((data[offset + 1] & 255) << 8)
+            | ((data[offset + 2] & 255) << 16) | ((data[offset + 3] & 255) << 24);
+    }
+
+    /** Certificate title name: 40 UTF-16LE characters at +0x0C. */
+    private static String titleName(byte[] data, int certificate) {
+        StringBuilder name = new StringBuilder();
+        for (int i = 0; i < 40; i++) {
+            char c = (char) ((data[certificate + 0x0C + i * 2] & 255) | ((data[certificate + 0x0D + i * 2] & 255) << 8));
+            if (c == 0) break;
+            name.append(c);
+        }
+        return name.toString();
+    }
+
     static synchronized void validate() throws IOException {
         Entry executable = resolve("default.xbe");
         Uri document = DocumentsContract.buildDocumentUriUsingTree(tree, executable.id);
-        byte[] header = new byte[0x180];
+        // Image header plus the certificate that follows it in retail XBEs.
+        byte[] header = new byte[(int) Math.min(0x1000, Math.max(0x180, executable.size))];
         try (InputStream input = resolver.openInputStream(document)) {
             if (input == null) throw new IOException("Не удалось открыть default.xbe");
             int position = 0;
@@ -124,11 +151,18 @@ final class SafAccess {
                 position += count;
             }
         }
-        int entry = (header[0x128] & 255) | ((header[0x129] & 255) << 8)
-            | ((header[0x12a] & 255) << 16) | ((header[0x12b] & 255) << 24);
-        if (header[0] != 'X' || header[1] != 'B' || header[2] != 'E' || header[3] != 'H'
-            || (entry ^ 0xA8FC57AB) != 0x00164356)
+        int entry = readInt(header, 0x128);
+        if (header[0] != 'X' || header[1] != 'B' || header[2] != 'E' || header[3] != 'H')
             throw new IOException("Нужна поддерживаемая Xbox-сборка NFS Underground");
+        if ((entry ^ 0xA8FC57AB) != 0x00164356) {
+            int certificate = readInt(header, 0x118) - readInt(header, 0x104);
+            if (certificate >= 0 && certificate + 0xA4 <= header.length
+                    && (readInt(header, certificate + 0x08) == 0x45410047
+                        || titleName(header, certificate).toLowerCase(java.util.Locale.ROOT)
+                            .startsWith("need for speed")))
+                throw new OtherReleaseException(readInt(header, certificate + 0xA0));
+            throw new IOException("Нужна поддерживаемая Xbox-сборка NFS Underground");
+        }
         String[] folders = {"CARS", "FRONTEND", "GLOBAL", "LANGUAGES", "MOVIES", "SOUND", "TRACKS"};
         for (String folder : folders) {
             if (!resolve(folder).directory) throw new IOException("Нет папки " + folder);

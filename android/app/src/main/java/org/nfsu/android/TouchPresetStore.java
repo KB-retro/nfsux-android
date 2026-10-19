@@ -9,6 +9,8 @@ import java.util.List;
 
 /** Named layouts share the active layout codec and atomic persistence. */
 final class TouchPresetStore {
+    /** Messages of validateName's IllegalArgumentException; the UI localises them. */
+    static final String NAME_LENGTH = "name-length", NAME_CHARACTERS = "name-characters";
     private final File directory;
 
     TouchPresetStore(File gameDirectory) {
@@ -20,12 +22,12 @@ final class TouchPresetStore {
         if (name.isEmpty() || name.length() > 48
                 || name.getBytes(StandardCharsets.UTF_8).length > 180
                 || name.startsWith(".") || name.endsWith(".")) {
-            throw new IllegalArgumentException("Введите имя длиной от 1 до 48 символов");
+            throw new IllegalArgumentException(NAME_LENGTH);
         }
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
             if (Character.isISOControl(c) || "/\\:*?\"<>|".indexOf(c) >= 0) {
-                throw new IllegalArgumentException("Имя содержит недопустимые символы");
+                throw new IllegalArgumentException(NAME_CHARACTERS);
             }
         }
         return name;
