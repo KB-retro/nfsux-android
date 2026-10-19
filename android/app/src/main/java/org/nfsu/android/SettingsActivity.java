@@ -1,6 +1,11 @@
 package org.nfsu.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +13,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -18,10 +24,11 @@ import java.io.IOException;
 
 /** Launcher settings: the in-game Camera rows plus runtime switches, applied at the next start. */
 public final class SettingsActivity extends Activity {
+    private static final int EXPORT_SAVES = 1, IMPORT_SAVES = 2;
     private LauncherSettings settings;
     private LinearLayout rows;
     private Spinner frameRate, scale, aniso, language;
-    private Switch fxaa, reflections, blur, square, widescreen, autoStart;
+    private Switch fxaa, reflections, blur, square, widescreen, showFps, autoStart;
     private SeekBar volume;
     private int initialScale;
 
@@ -53,6 +60,7 @@ public final class SettingsActivity extends Activity {
         blur = toggle(R.string.settings_blur, settings.option("blur", 1) != 0);
         square = toggle(R.string.settings_square, settings.option("square", 1) != 0);
         widescreen = toggle(R.string.settings_widescreen, settings.envValue("RECOMP_HORPLUS", 1) != 0);
+        showFps = toggle(R.string.settings_show_fps, LauncherSettings.showFps(this));
 
         section(R.string.settings_section_audio);
         volume = slider(R.string.settings_volume, settings.envValue("RECOMP_AUDIO_VOLUME", 100));
@@ -61,6 +69,27 @@ public final class SettingsActivity extends Activity {
         language = choice(R.string.settings_language, R.array.settings_languages,
             LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 1), 0));
         hint(R.string.settings_language_hint);
+
+        section(R.string.settings_section_saves);
+        action(R.string.settings_export_saves, new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/zip");
+                intent.putExtra(Intent.EXTRA_TITLE, "nfsu-saves-"
+                    + new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.ROOT).format(new java.util.Date()) + ".zip");
+                pick(intent, EXPORT_SAVES);
+            }
+        });
+        action(R.string.settings_import_saves, new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                pick(intent, IMPORT_SAVES);
+            }
+        });
+        hint(R.string.settings_saves_hint);
 
         section(R.string.settings_section_launcher);
         autoStart = toggle(R.string.settings_auto_start, LauncherSettings.autoStart(this));
@@ -95,8 +124,61 @@ public final class SettingsActivity extends Activity {
             return;
         }
         LauncherSettings.setAutoStart(this, autoStart.isChecked());
+        LauncherSettings.setShowFps(this, showFps.isChecked());
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private void pick(Intent intent, int request) {
+        try {
+            startActivityForResult(intent, request);
+        } catch (ActivityNotFoundException exception) {
+            Toast.makeText(this, R.string.preset_picker_unavailable, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (result != RESULT_OK || data == null || data.getData() == null) return;
+        final Uri uri = data.getData();
+        if (request == EXPORT_SAVES) {
+            try {
+                int files = SaveBackup.export(this, uri);
+                Toast.makeText(this, getString(R.string.settings_saves_exported, files), Toast.LENGTH_LONG).show();
+            } catch (IOException | SecurityException exception) {
+                Log.w("NFSU", "Cannot export saves", exception);
+                Toast.makeText(this, R.string.settings_saves_export_failed, Toast.LENGTH_LONG).show();
+            }
+        } else if (request == IMPORT_SAVES) {
+            new AlertDialog.Builder(this).setTitle(R.string.settings_import_saves)
+                .setMessage(R.string.settings_import_confirm)
+                .setPositiveButton(R.string.settings_import_saves, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface dialog, int which) { restore(uri); }
+                })
+                .setNegativeButton(R.string.action_cancel, null).show();
+        }
+    }
+
+    private void restore(Uri uri) {
+        try {
+            int files = SaveBackup.restore(this, uri);
+            Toast.makeText(this, getString(R.string.settings_saves_imported, files), Toast.LENGTH_LONG).show();
+            // The restored options file replaces the values shown here.
+            recreate();
+        } catch (IOException | SecurityException exception) {
+            Log.w("NFSU", "Cannot import saves", exception);
+            Toast.makeText(this, R.string.settings_saves_import_failed, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void action(int title, View.OnClickListener listener) {
+        Button button = new Button(this);
+        button.setText(title);
+        button.setAllCaps(false);
+        button.setOnClickListener(listener);
+        rows.addView(button, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT));
     }
 
     private int dp(int value) {

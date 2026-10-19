@@ -31,6 +31,16 @@
     <string name="settings_auto_start">Iniciar el juego automáticamente</string>
     <string name="settings_saved">Ajustes guardados</string>
     <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
+    <string name="settings_show_fps">Mostrar contador de FPS</string>
+    <string name="settings_section_saves">PARTIDAS GUARDADAS</string>
+    <string name="settings_export_saves">Exportar partidas (.zip)</string>
+    <string name="settings_import_saves">Importar partidas</string>
+    <string name="settings_saves_hint">Guarda perfiles, progreso de la carrera y opciones del juego. Cierra el juego antes de importar.</string>
+    <string name="settings_import_confirm">Las partidas con el mismo nombre se sustituirán por las de la copia.</string>
+    <string name="settings_saves_exported">Partidas exportadas (%1$d archivos)</string>
+    <string name="settings_saves_imported">Partidas importadas (%1$d archivos)</string>
+    <string name="settings_saves_export_failed">No se pudieron exportar las partidas</string>
+    <string name="settings_saves_import_failed">No se pudieron importar las partidas. Elige una copia hecha con esta app.</string>
     <string-array name="settings_frame_rates">
         <item>30 FPS</item>
         <item>60 FPS (experimental)</item>

@@ -121,6 +121,16 @@ static SDL_Window *host_sdl_window;
 static int host_active = 1;
 static int host_finished;
 
+extern volatile uint32_t nv2a_vk_frames_presented;
+
+/* Frames presented so far; GameActivity's FPS overlay samples the difference. */
+JNIEXPORT jint JNICALL Java_org_nfsu_android_GameActivity_nativePresentedFrames(JNIEnv *env, jclass cls)
+{
+    (void)env;
+    (void)cls;
+    return (jint)nv2a_vk_frames_presented;
+}
+
 JNIEXPORT void JNICALL Java_org_nfsu_android_GameActivity_nativeSurfaceChanged(
         JNIEnv *env, jclass cls, jobject surface, jint width, jint height)
 {

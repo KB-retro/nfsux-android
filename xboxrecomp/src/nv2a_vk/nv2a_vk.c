@@ -90,6 +90,8 @@ static int s_trace;
 static int s_vtrace;
 #define VT(...) do { if (s_vtrace > 0) { NFS_LOG_TRACE("graphics", "  [VKT] " __VA_ARGS__); fflush(stderr); } } while (0)
 static uint32_t s_frame;
+/* Presented frames, read by the Android FPS overlay. */
+volatile uint32_t nv2a_vk_frames_presented;
 /* RECOMP_TEX_CHANGES=1: log every cached texture whose guest bytes changed
  * (re-uploaded). Finds textures a title frees while still drawing them. */
 static int s_tex_changes = -1;
@@ -4204,6 +4206,7 @@ static void vk_flip_impl(void)
         return;
     pend_flush();
     s_frame++;
+    nv2a_vk_frames_presented = s_frame;
     if (s_frame % 300 == 0) {
         pool_report();
         NFS_LOG_DEBUG("graphics", "[vkkick] threshold %d, %u early submits (frame %u)\n",

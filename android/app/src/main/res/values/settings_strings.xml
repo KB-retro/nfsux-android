@@ -31,6 +31,16 @@
     <string name="settings_auto_start">Start the game automatically</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
+    <string name="settings_show_fps">Show FPS counter</string>
+    <string name="settings_section_saves">SAVED GAMES</string>
+    <string name="settings_export_saves">Export saves (.zip)</string>
+    <string name="settings_import_saves">Import saves</string>
+    <string name="settings_saves_hint">Backs up profiles, career progress and game options. Close the game before importing.</string>
+    <string name="settings_import_confirm">Saves with the same name will be replaced by those in the backup.</string>
+    <string name="settings_saves_exported">Saves exported (%1$d files)</string>
+    <string name="settings_saves_imported">Saves imported (%1$d files)</string>
+    <string name="settings_saves_export_failed">Could not export the saves</string>
+    <string name="settings_saves_import_failed">Could not import the saves. Choose a backup made by this app.</string>
     <string-array name="settings_frame_rates">
         <item>30 FPS</item>
         <item>60 FPS (experimental)</item>

@@ -31,6 +31,16 @@
     <string name="settings_auto_start">Запускать игру автоматически</string>
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>
+    <string name="settings_show_fps">Показывать счётчик FPS</string>
+    <string name="settings_section_saves">СОХРАНЕНИЯ</string>
+    <string name="settings_export_saves">Экспорт сохранений (.zip)</string>
+    <string name="settings_import_saves">Импорт сохранений</string>
+    <string name="settings_saves_hint">Сохраняет профили, прогресс карьеры и настройки игры. Закройте игру перед импортом.</string>
+    <string name="settings_import_confirm">Сохранения с теми же именами будут заменены файлами из копии.</string>
+    <string name="settings_saves_exported">Сохранения экспортированы (файлов: %1$d)</string>
+    <string name="settings_saves_imported">Сохранения импортированы (файлов: %1$d)</string>
+    <string name="settings_saves_export_failed">Не удалось экспортировать сохранения</string>
+    <string name="settings_saves_import_failed">Не удалось импортировать сохранения. Выберите копию, созданную этим приложением.</string>
     <string-array name="settings_frame_rates">
         <item>30 FPS</item>
         <item>60 FPS (экспериментально)</item>

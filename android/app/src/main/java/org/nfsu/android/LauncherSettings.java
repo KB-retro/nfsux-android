@@ -44,7 +44,15 @@ final class LauncherSettings {
     }
 
     static void setAutoStart(Context context, boolean value) {
-        context.getSharedPreferences("game", Context.MODE_PRIVATE).edit().putBoolean("auto_start", value).apply();
+        context.getSharedPreferences("game", Context.MODE_PRIVATE).edit().putBoolean("auto_start", value).commit();
+    }
+
+    static boolean showFps(Context context) {
+        return context.getSharedPreferences("game", Context.MODE_PRIVATE).getBoolean("show_fps", false);
+    }
+
+    static void setShowFps(Context context, boolean value) {
+        context.getSharedPreferences("game", Context.MODE_PRIVATE).edit().putBoolean("show_fps", value).commit();
     }
 
     LauncherSettings load() throws IOException {

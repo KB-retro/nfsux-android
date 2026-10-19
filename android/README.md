@@ -73,6 +73,12 @@ European PAL disc in Spanish), the launcher names the release instead of the
 generic error. Placing the NTSC-U `default.xbe` next to the PAL disc files is
 untested: the data formats of the two releases have not been compared.
 
+Settings can also show an **FPS counter** in the top-left corner (presented
+Vulkan frames per second, sampled once a second) and export or import the
+saves: a `.zip` with the `save/` tree (profiles, career) and
+`nfsu1x_options.txt`. Import only accepts those paths and replaces files of
+the same name; close the game first.
+
 The launcher, settings and touch-control editor are translated into English,
 Russian and Spanish and follow the system language.
 

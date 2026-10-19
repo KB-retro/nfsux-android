@@ -58,6 +58,25 @@ public final class GameActivity extends SDLActivity {
     }
 
     private RaceControlsView raceControls;
+    private android.widget.TextView fpsOverlay;
+    private int fpsLastFrames = -1;
+    private long fpsLastTime;
+    private final Runnable fpsUpdate = new Runnable() {
+        @Override public void run() {
+            int frames;
+            try {
+                frames = nativePresentedFrames();
+            } catch (UnsatisfiedLinkError error) {
+                return; // Native library not loaded: no overlay.
+            }
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (fpsLastFrames >= 0 && now > fpsLastTime)
+                fpsOverlay.setText(Math.round((frames - fpsLastFrames) * 1000f / (now - fpsLastTime)) + " FPS");
+            fpsLastFrames = frames;
+            fpsLastTime = now;
+            fpsOverlay.postDelayed(this, 1000);
+        }
+    };
     private TouchLayoutStore touchLayoutStore;
     private android.view.View editorToolbar;
     private TouchPresetController touchPresets;
@@ -240,6 +259,18 @@ public final class GameActivity extends SDLActivity {
         mLayout.addView(raceControls, new android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        if (LauncherSettings.showFps(this)) {
+            fpsOverlay = new android.widget.TextView(this);
+            fpsOverlay.setTextColor(0xFFB8E9F5);
+            fpsOverlay.setTextSize(13);
+            fpsOverlay.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+            fpsOverlay.setShadowLayer(3, 1, 1, android.graphics.Color.BLACK);
+            fpsOverlay.setPadding(24, 12, 24, 12);
+            fpsOverlay.setText("-- FPS");
+            mLayout.addView(fpsOverlay, new android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
         restoreFullscreen();
     }
 
@@ -249,6 +280,11 @@ public final class GameActivity extends SDLActivity {
         if (gameRumble == null) gameRumble = new GameRumble(this);
         gameRumble.setActive(true);
         if (raceControls != null) raceControls.resumeControls();
+        if (fpsOverlay != null) {
+            fpsLastFrames = -1;
+            fpsOverlay.removeCallbacks(fpsUpdate);
+            fpsOverlay.post(fpsUpdate);
+        }
         restoreFullscreen();
     }
 
@@ -257,6 +293,7 @@ public final class GameActivity extends SDLActivity {
         // A document picker is part of the editor session, not an abandoned edit.
         if (touchPresets == null || !touchPresets.isPickingDocument()) closeTouchEditor(false);
         if (raceControls != null) raceControls.pauseControls();
+        if (fpsOverlay != null) fpsOverlay.removeCallbacks(fpsUpdate);
         if (gameRumble != null) gameRumble.setActive(false);
         super.onPause();
     }
@@ -267,6 +304,8 @@ public final class GameActivity extends SDLActivity {
         if (hasFocus) restoreFullscreen();
         else if (raceControls != null) raceControls.cancelInput();
     }
+
+    private static native int nativePresentedFrames();
 
     private static native void nativeSurfaceChanged(Surface surface, int width, int height);
 
