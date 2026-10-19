@@ -70,8 +70,11 @@ pixels; menu touch follows the same letterbox.
 
 `RECOMP_LANGUAGE` is the dashboard language the emulated kernel reports
 through `XC_LANGUAGE` (1 English, 3 German, 4 French, 5 Spanish, 6 Italian;
-default 1). The game shows a language only if its `LANGUAGES` folder contains
-it and the executable supports it, otherwise it stays in English.
+default 1). The NTSC-U boot code (0x11190) maps only English, French and
+German and falls back to English, so `recomp_manual.c` overrides it: any of
+the five returns its id in the game's language table (0x255258), and the
+game loads `LANGUAGES\LANGUAGE_<NAME>.BIN`. The NTSC-U disc carries all of
+them, including Spanish and Italian. Speech stays in English.
 
 The APK runs code recompiled from the NTSC-U `default.xbe` and only starts
 that file. When the folder holds another NFSU release (for example the

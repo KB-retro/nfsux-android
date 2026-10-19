@@ -27,7 +27,7 @@
     <string name="settings_aspect">Формат изображения</string>
     <string name="settings_volume">Общая громкость</string>
     <string name="settings_language">Язык игры</string>
-    <string name="settings_language_hint">Игра использует этот язык, если он есть в папке LANGUAGES; иначе остаётся английский. На европейских дисках языков больше, чем на североамериканском.</string>
+    <string name="settings_language_hint">Тексты игры будут на этом языке. Озвучка остаётся на английском.</string>
     <string name="settings_auto_start">Запускать игру автоматически</string>
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>

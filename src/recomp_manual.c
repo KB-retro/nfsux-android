@@ -566,6 +566,31 @@ void sub_001EA5B2(void)
     esp += 4;
 }
 
+/* Boot language (cdecl, no arguments): returns the id of the language
+ * table at 0x255258 (0 English, 1 French, 2 German, 3 Italian, 4 Spanish,
+ * 5 Dutch, 6 Swedish), which sub_00159660 loads from LANGUAGES\. The NTSC-U
+ * code maps only the English, French and German dashboard languages and
+ * falls back to English for the rest, although the disc carries
+ * LANGUAGE_SPANISH.BIN and LANGUAGE_ITALIAN.BIN. RECOMP_LANGUAGE (the
+ * XC_LANGUAGE value, set by the launcher) now picks any of them. */
+extern void sub_00011190_gen(void);
+void sub_00011190(void)
+{
+    /* XC_LANGUAGE 1..9 -> table id; -1 keeps the game's own choice. */
+    static const int s_lang_ids[10] = { -1, 0, -1, 2, 1, 4, 3, -1, -1, -1 };
+    const char *e = getenv("RECOMP_LANGUAGE");
+    int lang = e ? atoi(e) : 0;
+
+    if (lang < 1 || lang > 9 || s_lang_ids[lang] < 0) {
+        sub_00011190_gen();
+        return;
+    }
+    NFS_LOG_INFO("system", "[language] RECOMP_LANGUAGE=%d -> game language %d\n",
+            lang, s_lang_ids[lang]);
+    eax = (uint32_t)s_lang_ids[lang];
+    esp += 4;                                   /* ret */
+}
+
 /* Hor+ 16:9. NFSU1 has no widescreen mode (its only XGetVideoFlags caller,
  * 0x16EA50, reads the PAL-60 bit), so with the TV reported 16:9 the
  * presenter stretched the 4:3 picture. The view projection (sub_00018E60,

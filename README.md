@@ -26,8 +26,8 @@ sin emulador.
     automático, las pantallas 4:3 (por ejemplo consolas retro Android) usan la
     imagen 4:3 original a pantalla completa, sin franjas negras.
   - Volumen general.
-  - Idioma del juego (inglés, español, francés, alemán, italiano). El juego
-    solo lo usa si su carpeta `LANGUAGES` lo incluye.
+  - Idioma del juego: inglés, español, francés, alemán o italiano. El disco
+    USA ya trae los textos de todos; las voces siguen en inglés.
   - Inicio automático opcional.
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de

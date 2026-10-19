@@ -27,7 +27,7 @@
     <string name="settings_aspect">Picture format</string>
     <string name="settings_volume">Master volume</string>
     <string name="settings_language">Game language</string>
-    <string name="settings_language_hint">The game uses this language when its LANGUAGES folder has it; otherwise it stays in English. European discs carry more languages than the North American one.</string>
+    <string name="settings_language_hint">The game texts use this language. Speech stays in English.</string>
     <string name="settings_auto_start">Start the game automatically</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
