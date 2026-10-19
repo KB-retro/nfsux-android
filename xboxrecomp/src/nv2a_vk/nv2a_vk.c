@@ -163,13 +163,16 @@ static AndroidHostWindow s_android_window;
 #endif
 static VkFormat       s_sc_format;
 static VkExtent2D     s_sc_extent;
+/* Some drivers create more images than requested (Mali-G615 on Dimensity
+ * returned over 8, so vkGetSwapchainImagesKHR answered VK_INCOMPLETE). */
+#define NV2A_VK_MAX_SC_IMAGES 16
 static uint32_t       s_sc_count;
-static VkImage        s_sc_images[8];
-static VkImageView    s_sc_views[8];
+static VkImage        s_sc_images[NV2A_VK_MAX_SC_IMAGES];
+static VkImageView    s_sc_views[NV2A_VK_MAX_SC_IMAGES];
 #ifdef __ANDROID__
 /* A submit fence does not establish that presentation consumed its wait
  * semaphore. Reacquiring the same swapchain image allows its reuse. */
-static VkSemaphore s_sc_rendered[8];
+static VkSemaphore s_sc_rendered[NV2A_VK_MAX_SC_IMAGES];
 #endif
 static int            s_headless;
 #if !defined(__SWITCH__)
@@ -2373,7 +2376,7 @@ static int create_swapchain(void)
             NFS_LOG_ERROR("graphics", "  [VK] " "swapchain creation failed: %d\n", result);
             return 0;
         }
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < NV2A_VK_MAX_SC_IMAGES; i++) {
             if (s_sc_views[i]) vkDestroyImageView(s_dev, s_sc_views[i], NULL);
             s_sc_views[i] = VK_NULL_HANDLE;
 #ifdef __ANDROID__
@@ -2385,10 +2388,17 @@ static int create_swapchain(void)
             vkDestroySwapchainKHR(s_dev, s_swapchain, NULL);
         s_swapchain = sc;
     }
-    s_sc_count = 8;
-    result = vkGetSwapchainImagesKHR(s_dev, s_swapchain, &s_sc_count, s_sc_images);
+    s_sc_count = 0;
+    result = vkGetSwapchainImagesKHR(s_dev, s_swapchain, &s_sc_count, NULL);
+    if (result == VK_SUCCESS && s_sc_count > NV2A_VK_MAX_SC_IMAGES) {
+        NFS_LOG_ERROR("graphics", "  [VK] " "swapchain has %u images, at most %d supported\n",
+                s_sc_count, NV2A_VK_MAX_SC_IMAGES);
+        return 0;
+    }
+    if (result == VK_SUCCESS)
+        result = vkGetSwapchainImagesKHR(s_dev, s_swapchain, &s_sc_count, s_sc_images);
     if (result != VK_SUCCESS || !s_sc_count) {
-        NFS_LOG_ERROR("graphics", "  [VK] " "swapchain images failed: %d\n", result);
+        NFS_LOG_ERROR("graphics", "  [VK] " "swapchain images failed: %d (%u images)\n", result, s_sc_count);
         return 0;
     }
     for (i = 0; i < s_sc_count; i++) {
@@ -2437,7 +2447,7 @@ static void android_release_presentation(void)
 {
     uint32_t i;
     android_presentation_idle();
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < NV2A_VK_MAX_SC_IMAGES; i++) {
         if (s_sc_views[i]) vkDestroyImageView(s_dev, s_sc_views[i], NULL);
         s_sc_views[i] = VK_NULL_HANDLE;
         if (s_sc_rendered[i]) vkDestroySemaphore(s_dev, s_sc_rendered[i], NULL);
