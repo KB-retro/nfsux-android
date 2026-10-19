@@ -42,7 +42,7 @@ jobs:
             echo "::warning::$1 not offered; available: $(grep -o "^ *$2[^ ]*" "$RUNNER_TEMP/sdk-list.txt" | tr -d ' ' | sort -uV | tr '\n' ' ')" >&2
             echo "$found"
           }
-          PLATFORM=$(pick "platforms;android-37" "platforms;android-37")
+          PLATFORM=$(pick "platforms;android-37.0" "platforms;android-37")
           NDK=$(pick "ndk;30.0.16248370" "ndk;30")
           CMAKE=$(pick "cmake;4.1.2" "cmake;4")
           echo "Installing $PLATFORM $NDK $CMAKE"
