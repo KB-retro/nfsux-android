@@ -86,11 +86,30 @@ inert gap taps and exclusive camera orbit below the strip. The host fixture
 checks this screen alongside both garage entry paths and Quick Race.
 Physical-device acceptance remains pending.
 
-Choose Trade Car (UndergroundTradeCarScreen, vtable 1FBDB0) uses the same
-shared carousel and camera path. B73F0 constructs its browser at +48 (selected
-node +54); B75E0 accepts MouseClick/Select and routes Left/Right to B7190.
-The host fixture covers arrow taps, selection, gap swipes and camera ownership
-alongside the other car browsers. APK/device validation remains pending.
+### Guest menu lifetime
+
+Touch package dispatch now captures a bounded `TouchSnapshot` before calling
+native focus or activation handlers. It records the current screen identity,
+package flags, object-array identity and rendered bounds. Hit tests use that
+snapshot; they never recover a package from a retained gesture slot. A hit
+outside the dispatch scope returns a miss. Nested dispatch restores the previous
+scope when it returns.
+
+Retained gesture targets carry the menu generation, array identity and object
+hash. Screen/type changes, input reset and completed actions discard targets.
+`touch_execute_action` copies the selected intent and commits at most one action
+per update. Native focus callbacks are followed by snapshot validation before
+touch code continues reading the package. Invalid package/array ranges and
+oversized lists are rejected before native traversal. Object bounds are captured
+once per package dispatch, including the neighbouring bounds used for generous
+dialog hit targets.
+
+The synthetic regression also covers poison/overflow array addresses, oversized
+lists, a list destroyed by a focus callback, an out-of-scope hit callback and
+menu replacement between hover and press. These checks cover the observed
+`0xEEEEEEEE` hit-test failure boundary; they do not establish the original writer
+of the bad pointer or resolve the separate Poco save-stall investigation. Range
+checks and identity checks are not an allocator-level lifetime guarantee.
 
 ```sh
 cc -O1 -D__ANDROID__ -ffunction-sections -fdata-sections -Isrc \

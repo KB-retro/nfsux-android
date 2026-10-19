@@ -418,10 +418,8 @@ static void import_submissions(XgfExecutor *e)
     }
 }
 
-int xgf_should_preempt(void)
+static int fiber_should_preempt(XgfFiber *self)
 {
-    XgfFiber *self = xgf_current();
-    if (!self || running->on_native_callback) return 0;
     if (__atomic_load_n(&self->suspended, __ATOMIC_ACQUIRE)) return 1;
     XgfExecutor *e = self->executor;
     /* Only the owner changes the list. Native notifications, priority changes
@@ -451,6 +449,26 @@ int xgf_should_preempt(void)
     }
     return self->preempt_higher ||
         (self->preempt_equal && monotonic_ms() > self->slice_start);
+}
+
+int xgf_should_preempt(void)
+{
+    XgfFiber *self = xgf_current();
+    return self && !running->on_native_callback && fiber_should_preempt(self);
+}
+
+XgfPreemptStatus xgf_preempt_status(void)
+{
+    XgfExecutor *e = running;
+    if (!e || !e->active) return XGF_PREEMPT_NATIVE;
+    XgfFiber *self = e->active;
+    /* This is the active guest context even during a native-stack callback.
+     * Read it directly: generated safe points need only one out-of-line call,
+     * rather than reloading TLS through the bridge and dispatch helpers. */
+    const RecompKernelState *k = &self->context.kernel;
+    if (e->on_native_callback || k->gil_depth <= 0 || k->gil_nopreempt || k->dispatch_held)
+        return XGF_PREEMPT_STAY;
+    return fiber_should_preempt(self) ? XGF_PREEMPT_YIELD : XGF_PREEMPT_STAY;
 }
 
 XgfRunResult xgf_executor_run(XgfExecutor *e, uint32_t budget_ms, XgfPoll poll)

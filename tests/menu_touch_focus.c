@@ -15,13 +15,14 @@ RECOMP_TLS uint32_t g_ebx, g_esi, g_edi, g_ebp, g_seh_ebp;
 RECOMP_TLS double g_fp_stack[8];
 RECOMP_TLS int g_fp_top;
 static unsigned char ram[0x300000];
+size_t g_xbox_total_ram = sizeof(ram), g_xbox_map_size;
 static const uint32_t feng = 0x12000, package = 0x18000;
 static const uint32_t yes = 0x20000, no = 0x21000;
 static uint32_t expected;
 static uint32_t expected_message = 0x406415E3u;
 static int presses, focus_changes, steal_focus, controller_selects;
 static int palette_updates, palette_previews, focus_flushes;
-static int vinyl_color_workflow;
+static int vinyl_color_workflow, invalidate_on_focus, unscoped_hit;
 static unsigned draw_mask = 3;
 static int keyboard_layout, stale_mouse_edge, carousel_layout;
 void sub_000D8B10(void);
@@ -181,6 +182,7 @@ void sub_000E53C0(void)
     assert(MEM32(g_esp + 12) == 1);
     MEM32(package + 0x80) = MEM32(g_esp + 8);
     focus_changes++;
+    if (invalidate_on_focus) MEM32(package + 0x84) = 0xEEEEEEEEu;
     g_eax = 0xDEAD; g_ecx = 0xBEEF; g_edx = 0xBAD;
     g_esp += 16;
 }
@@ -229,6 +231,13 @@ void sub_000D8B10_gen(void)
     g_esi = 0x1111; g_fp_top = 2; g_fp_stack[2] = 42;
     sub_000D8730();
     assert(g_esp == entry);
+    if (unscoped_hit) {
+        /* A hit outside package dispatch must not borrow the old slot. */
+        g_esp = entry - 16;
+        MEM32(g_esp + 12) = 0xEEEEEEEEu;
+        nfsu_touch_hit();
+        assert(g_esp == entry && !(g_eax & 0xFF));
+    }
     g_esp += 8;
 }
 static void update(void)
@@ -1305,6 +1314,43 @@ int main(void)
     tap_at(90.0f / 640, 210.0f / 480, yes);
     assert(controller_selects == before_actions + 3);
     assert(MEM32(screen + 0x98) == data && MEM32(screen + 0xA0) == row);
+    before_actions = presses;
+    unscoped_hit = 1;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    unscoped_hit = 0;
+    assert(presses == before_actions + 1);
+    /* A menu replaced between hover and press cancels the gesture. */
+    before_actions = presses;
+    menu_touch_event(MENU_TOUCH_DOWN, 90.0f / 640, 210.0f / 480, 1280, 720);
+    menu_touch_event(MENU_TOUCH_UP, 90.0f / 640, 210.0f / 480, 1280, 720);
+    update();
+    MEM32(screen) = 0x1FD734;
+    update(); update(); update();
+    assert(presses == before_actions);
+    MEM32(screen) = 0x1FC384;
+    /* A bad package array must be rejected before any native hit traversal. */
+    before_actions = presses;
+    MEM32(package + 0x84) = 0xEEEEEEEEu;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    assert(presses == before_actions);
+    MEM32(package + 0x84) = 0xFFFFFFFCu;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    assert(presses == before_actions);
+    MEM32(package + 0x84) = 0x22000;
+    MEM32(package + 0x88) = 4097;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    assert(presses == before_actions);
+    MEM32(package + 0x88) = 2;
+    /* Native focus can destroy the list. Do not resume using its snapshot. */
+    MEM32(package + 0x80) = 0;
+    invalidate_on_focus = 1;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    assert(presses == before_actions);
+    invalidate_on_focus = 0;
+    MEM32(package + 0x84) = 0x22000;
+    MEM32(package + 0x80) = yes;
+    tap_at(90.0f / 640, 210.0f / 480, yes);
+    assert(presses == before_actions + 1);
     /* Physical-controller mode restores touch captions and leaves native
      * drawing unchanged. Switch back only after the previous edits are gone. */
     MEM32(yes + 0x10) = 0xA87927BE;

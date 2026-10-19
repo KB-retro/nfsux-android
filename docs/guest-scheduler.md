@@ -575,3 +575,62 @@ The executor test also checks 100 synchronous native-stack calls against
 pthread_getattr_np stack bounds, with active kernel/GIL/native-lock guards,
 preserved virtual identity and errno/last-error propagation. It verifies that
 the callback cannot yield or park. This is not an ART/device runtime test.
+
+## Executor safe-point fast path (2026-10-18)
+
+`recomp_preempt()` now asks `xgf_preempt_status()` to combine the executor
+lookup, guest GIL/ISR/dispatch guards and scheduling query. The active fiber
+already owns the guest kernel context, so this path avoids the separate
+`xbox_thread_holds_dispatch()` and repeated `xgf_current()` calls and their
+TLS lookups. Outside the executor the bridge retains its native scheduler
+path. The existing raw `xgf_should_preempt()` query remains available.
+Priority, notification generation, suspension and equal-priority time slicing
+are unchanged. No timer polling interval or fairness rule was weakened.
+
+Host executor regressions cover the new guards against a ready higher-priority
+peer (no GIL, ISR/no-preempt and dispatch lock), native-stack callbacks and the
+native fallback result, in addition to the existing wake/priority/timeout tests.
+The actual kernel executor regression also passes. Android validation used
+`./gradlew assembleDebug lintDebug -Pnfsu.genOpt=-O2` (BUILD SUCCESSFUL).
+
+Poco X7 manually driven race, same logged options and O2 compiler flags:
+
+| Metric | Previous | Combined safe point |
+|---|---:|---:|
+| Interval, MSK | 18:58:07–18:59:07 | 19:00:42–19:01:42 |
+| Renderer flips/s | 43.76 | 46.45 |
+| Executor CPU, one-core percent | 95.99 | 89.90 |
+| Executor CPU ms per renderer flip | 21.93 | 19.35 |
+| Renderer CPU, one-core percent | 93.02 | 95.06 |
+| Logged hitches >50 ms | 9 | 6 |
+| Maximum logged hitch, ms | 82 | 94 |
+
+Observed throughput +6.1%, executor CPU per flip -11.8%. One sequential pair
+of manual races is not a controlled causal estimate: scene, cache and thermal
+history vary. PERF5 windows are asynchronous, flip counts are not independent
+display measurements, and hitches are only the logged >50 ms subset. The
+maximum hitch increased; this is not evidence that texture stalls are fixed.
+No unsupported-wait, FORTIFY or Fatal-signal diagnostic appeared in the captured
+candidate session. Extended stability and cross-device validation remain undone.
+Raw intervals/summaries are in the local ignored directory
+`performance-results/2026-10-18/safe-point-{before,after}-*`.
+
+`tests/guest_preempt_bench.c` measures the quiet query in isolation. Build using
+the same runtime sources as the fiber test, adding `kernel_hal.c` and `-Itests`:
+
+```sh
+cc -O2 -ffunction-sections -fdata-sections -Itests -Ixboxrecomp/src \
+  tests/guest_preempt_bench.c xboxrecomp/src/kernel/guest_fiber.c \
+  xboxrecomp/src/kernel/guest_fiber_switch.S \
+  xboxrecomp/src/kernel/recomp_context.c xboxrecomp/src/kernel/kernel_hal.c \
+  xboxrecomp/src/platform/win32_compat.c \
+  -Wl,--gc-sections -pthread -lm -o /tmp/nfsu-safe-point-bench
+/tmp/nfsu-safe-point-bench
+```
+
+An Android30 ARM64 build with NDK 30, run on Poco CPU 7, produced three
+alternating pairs: previous 13.10/13.19/13.18 ns, combined 10.14/10.14/10.12 ns
+per check. This static executable models only an uncontended executor, not
+shared-library TLS costs, contention, full title CPU time or FPS. Host x86
+results are likewise microbenchmark evidence only. The temporary device
+benchmark was removed after collection; the candidate APK remains installed.

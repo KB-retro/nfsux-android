@@ -1002,15 +1002,16 @@ static int gil_main_quantum_pending(uint64_t now)
 
 void recomp_preempt(void)
 {
-    if (t_gil_depth <= 0 || t_gil_nopreempt || xbox_thread_holds_dispatch())
-        return;
 #ifdef NFSU_GUEST_EXECUTOR
-    if (bridge_on_executor()) {
-        if (xgf_should_preempt())
+    XgfPreemptStatus status = xgf_preempt_status();
+    if (status != XGF_PREEMPT_NATIVE) {
+        if (status == XGF_PREEMPT_YIELD)
             gil_yield_measured(NFSU_PERF_PREEMPT_WAIT, NFSU_PERF_PREEMPT_TOTAL);
         return;
     }
 #endif
+    if (t_gil_depth <= 0 || t_gil_nopreempt || xbox_thread_holds_dispatch())
+        return;
 #if defined(__ANDROID__) || defined(NFSU_GUEST_SCHEDULER_TEST)
     if (s_guest_scheduler_on) {
         if (xgs_should_preempt())
