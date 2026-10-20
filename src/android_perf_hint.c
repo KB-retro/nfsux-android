@@ -77,6 +77,28 @@ static void pin_fast_cores(const char *who)
         NFS_LOG_WARN("performance", "[cores] %s thread: sched_setaffinity failed\n", who);
 }
 
+/* Leaving the app moves the process into the background cpuset, and the
+ * kernel then replaces the threads' affinity with the little cores; coming
+ * back does not restore it. Check about once a second and pin again. */
+static void repin_fast_cores(void)
+{
+    static int logged;
+    cpu_set_t now;
+    int n = atomic_load(&s_ntids), i, fixed = 0;
+    pid_t self = (pid_t)syscall(SYS_gettid);
+
+    if (!s_fast_enabled) return;
+    for (i = -1; i < n && i < MAX_THREADS; i++) {
+        pid_t tid = i < 0 ? self : s_tids[i];
+        if (sched_getaffinity(tid, sizeof now, &now) != 0 || CPU_EQUAL(&now, &s_fast)) continue;
+        if (sched_setaffinity(tid, sizeof s_fast, &s_fast) == 0) fixed++;
+    }
+    if (fixed && logged < 20) {
+        logged++;
+        NFS_LOG_INFO("performance", "[cores] %d thread(s) pinned again to the fast cores\n", fixed);
+    }
+}
+
 void android_perf_hint_add_thread(void)
 {
     pin_fast_cores("game");
@@ -141,6 +163,10 @@ void android_perf_hint_frame(void)
     int64_t t = now_ns(), target, work;
 
     if (s_state == 0) start_session();
+    {
+        static int frames;
+        if (++frames % 60 == 0) repin_fast_cores();
+    }
     if (s_state != 1) return;
     target = atomic_load(&s_target_ns);
     if (target != s_session_target && s_update(s_session, target) == 0)
