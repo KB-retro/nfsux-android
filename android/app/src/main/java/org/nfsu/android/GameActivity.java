@@ -256,9 +256,15 @@ public final class GameActivity extends SDLActivity {
                     && event.getKeyCode() == android.view.KeyEvent.KEYCODE_BACK) closeTouchEditor(false);
             return true;
         }
+        // Back key from any source (a handheld's Back/Select button, a remote):
+        // SDL takes it as a controller button, so open the quick menu here.
+        int code = event.getKeyCode();
+        if (code == android.view.KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == android.view.KeyEvent.ACTION_UP && !event.isCanceled()) showQuickMenu();
+            return true;
+        }
         // Controller: Select + Start together open the quick menu (Start still
         // reaches the game first, which pauses a race).
-        int code = event.getKeyCode();
         if (code == android.view.KeyEvent.KEYCODE_BUTTON_SELECT || code == android.view.KeyEvent.KEYCODE_BUTTON_START) {
             boolean down = event.getAction() == android.view.KeyEvent.ACTION_DOWN;
             if (code == android.view.KeyEvent.KEYCODE_BUTTON_SELECT) selectHeld = down;
@@ -299,6 +305,15 @@ public final class GameActivity extends SDLActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Target 36+: the back gesture and the navigation bar's back no longer
+        // reach onBackPressed(); they invoke this callback instead.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                new android.window.OnBackInvokedCallback() {
+                    @Override public void onBackInvoked() { onBackPressed(); }
+                });
+        }
         touchLayoutStore = new TouchLayoutStore(gameDirectory());
         raceControls = new RaceControlsView(this);
         raceControls.setLayout(touchLayoutStore.load());
