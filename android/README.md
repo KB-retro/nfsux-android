@@ -91,6 +91,19 @@ the same name; close the game first.
 The launcher, settings and touch-control editor are translated into English,
 Russian and Spanish and follow the system language.
 
+## FSR 1.0 upscaling
+
+`RECOMP_VK_FSR=1` (launcher: "FSR 1.0 upscaling", off by default) replaces the
+FXAA present pass with AMD FidelityFX Super Resolution 1 (MIT), ported from
+`ffx_fsr1.h` into two GLSL passes in `nv2a_vk.c`: EASU upscales the surface
+into an intermediate image of the presented rectangle's size, RCAS sharpens it
+into the swapchain. It runs only when the surface is smaller than that
+rectangle (otherwise FXAA or the blit as before). `RECOMP_VK_FSR_SHARPNESS`
+sets RCAS strength in stops, 0 sharpest; the launcher offers 0.5 / 0.2 / 0.
+FSR 2/3 need motion vectors and depth the title does not produce. The shaders
+pass glslangValidator (Vulkan 1.1) and a NumPy mirror of them; not yet run on
+a device.
+
 ## Performance hints and -O2
 
 On Android 13+ the game and renderer threads share an APerformanceHint session

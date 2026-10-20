@@ -31,6 +31,9 @@
     <string name="settings_auto_start">Iniciar el juego automáticamente</string>
     <string name="settings_saved">Ajustes guardados</string>
     <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
+    <string name="settings_fsr">Escalado FSR 1.0</string>
+    <string name="settings_fsr_sharpness">Nitidez</string>
+    <string name="settings_fsr_hint">Imagen más nítida cuando el juego dibuja por debajo de la resolución de la pantalla (escala 1x o 1.5x). Sustituye al FXAA mientras está activo.</string>
     <string name="settings_fast_cores">Usar solo los núcleos rápidos</string>
     <string name="settings_fast_cores_hint">Experimental. Puede ayudar en perfiles de ahorro que mueven el juego a los núcleos lentos.</string>
     <string name="settings_show_fps">Mostrar contador de FPS</string>
@@ -58,5 +61,10 @@
         <item>Automático</item>
         <item>Panorámico 16:9</item>
         <item>Clásico 4:3</item>
+    </string-array>
+    <string-array name="settings_fsr_sharpness_levels">
+        <item>Suave</item>
+        <item>Normal</item>
+        <item>Fuerte</item>
     </string-array>
 </resources>

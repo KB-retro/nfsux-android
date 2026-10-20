@@ -30,6 +30,7 @@ sin emulador.
     italiano. El disco USA ya trae los textos de todos; las voces siguen en
     inglés, y los vídeos que no estén en el idioma elegido se ven en inglés.
   - Inicio automático opcional.
+- **Escalado FSR 1.0** (AMD) con nitidez ajustable: imagen más nítida sin subir la resolución real.
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de
   la carrera y opciones en un `.zip`.

@@ -3921,7 +3921,7 @@ static VkDescriptorSetLayout s_pp_dsl;
 #endif
 static VkPipelineLayout      s_pp_layout;
 static VkSampler             s_pp_sampler;
-static struct { VkFormat fmt; VkPipeline pipe; } s_pp[2];
+static struct { VkFormat fmt; VkPipeline pipe; } s_pp[3][2];   /* FXAA, EASU, RCAS */
 
 static const char s_pp_vs[] =
     "#version 450\n"
@@ -3989,6 +3989,132 @@ static const char s_pp_fs[] =
     "    o = vec4(textureLod(src, uv, 0.0).rgb, 1.0);\n"
     "}\n";
 
+/* ── FSR 1.0 (AMD FidelityFX Super Resolution 1, MIT licence) ─────────
+ * RECOMP_VK_FSR=1: when the surface is smaller than the presented
+ * rectangle, EASU (edge-adaptive upscale, 12 taps) writes the rectangle's
+ * size into an intermediate image and RCAS (robust contrast-adaptive
+ * sharpening) draws it to the swapchain, instead of the FXAA pass.
+ * RECOMP_VK_FSR_SHARPNESS: RCAS strength in stops, 0 = sharpest (0.2).
+ * Ported from ffx_fsr1.h (FsrEasuF, FsrRcasF), 32-bit float path. */
+static int s_fsr = -1;
+static float s_fsr_sharp = 0.2f;
+static VkImage s_fsr_img;
+static VkImageView s_fsr_view;
+static VkDeviceMemory s_fsr_mem;
+static uint32_t s_fsr_w, s_fsr_h;
+static VkFormat s_fsr_fmt;
+
+static const char s_easu_fs[] =
+    "#version 450\n"
+    "layout(set = 0, binding = 0) uniform sampler2D src;\n"
+    "layout(push_constant) uniform P { vec4 rect; vec4 size; } pc;\n"
+    "layout(location = 0) out vec4 o;\n"
+    "ivec2 hi;\n"
+    "vec3 T(ivec2 p) { return texelFetch(src, clamp(p, ivec2(0), hi), 0).rgb; }\n"
+    "float L(vec3 c) { return c.b * 0.5 + (c.r * 0.5 + c.g); }\n"
+    "void tap(inout vec3 aC, inout float aW, vec2 off, vec2 dir, vec2 len, float lob, float clp, vec3 c) {\n"
+    "    vec2 v = vec2(off.x * dir.x + off.y * dir.y, off.x * -dir.y + off.y * dir.x) * len;\n"
+    "    float d2 = min(dot(v, v), clp);\n"
+    "    float wB = 2.0 / 5.0 * d2 - 1.0, wA = lob * d2 - 1.0;\n"
+    "    wB *= wB; wA *= wA;\n"
+    "    wB = 25.0 / 16.0 * wB - (25.0 / 16.0 - 1.0);\n"
+    "    float w = wB * wA; aC += c * w; aW += w;\n"
+    "}\n"
+    "void set(inout vec2 dir, inout float len, float w, float lA, float lB, float lC, float lD, float lE) {\n"
+    "    float dc = lD - lC, cb = lC - lB;\n"
+    "    float lenX = 1.0 / max(max(abs(dc), abs(cb)), 1e-5), dirX = lD - lB;\n"
+    "    dir.x += dirX * w; lenX = clamp(abs(dirX) * lenX, 0.0, 1.0); len += lenX * lenX * w;\n"
+    "    float ec = lE - lC, ca = lC - lA;\n"
+    "    float lenY = 1.0 / max(max(abs(ec), abs(ca)), 1e-5), dirY = lE - lA;\n"
+    "    dir.y += dirY * w; lenY = clamp(abs(dirY) * lenY, 0.0, 1.0); len += lenY * lenY * w;\n"
+    "}\n"
+    "void main() {\n"
+    "    hi = ivec2(pc.size.xy) - 1;\n"
+    "    vec2 pp = (gl_FragCoord.xy - pc.rect.xy) * (pc.size.xy / pc.rect.zw) - 0.5;\n"
+    "    vec2 fp = floor(pp); pp -= fp;\n"
+    "    ivec2 q = ivec2(fp);\n"
+    "    vec3 b = T(q + ivec2(0, -1)), c = T(q + ivec2(1, -1));\n"
+    "    vec3 e = T(q + ivec2(-1, 0)), f = T(q), g = T(q + ivec2(1, 0)), h = T(q + ivec2(2, 0));\n"
+    "    vec3 i = T(q + ivec2(-1, 1)), j = T(q + ivec2(0, 1)), k = T(q + ivec2(1, 1)), l = T(q + ivec2(2, 1));\n"
+    "    vec3 n = T(q + ivec2(0, 2)), oo = T(q + ivec2(1, 2));\n"
+    "    float bL = L(b), cL = L(c), eL = L(e), fL = L(f), gL = L(g), hL = L(h);\n"
+    "    float iL = L(i), jL = L(j), kL = L(k), lL = L(l), nL = L(n), oL = L(oo);\n"
+    "    vec2 dir = vec2(0.0); float len = 0.0;\n"
+    "    set(dir, len, (1.0 - pp.x) * (1.0 - pp.y), bL, eL, fL, gL, jL);\n"
+    "    set(dir, len, pp.x * (1.0 - pp.y), cL, fL, gL, hL, kL);\n"
+    "    set(dir, len, (1.0 - pp.x) * pp.y, fL, iL, jL, kL, nL);\n"
+    "    set(dir, len, pp.x * pp.y, gL, jL, kL, lL, oL);\n"
+    "    float dirR = dot(dir, dir);\n"
+    "    bool zro = dirR < 1.0 / 32768.0;\n"
+    "    dirR = zro ? 1.0 : inversesqrt(dirR);\n"
+    "    dir.x = zro ? 1.0 : dir.x;\n"
+    "    dir *= dirR;\n"
+    "    len = len * 0.5; len *= len;\n"
+    "    float stretch = dot(dir, dir) / max(abs(dir.x), abs(dir.y));\n"
+    "    vec2 len2 = vec2(1.0 + (stretch - 1.0) * len, 1.0 - 0.5 * len);\n"
+    "    float lob = 0.5 + ((1.0 / 4.0 - 0.04) - 0.5) * len;\n"
+    "    float clp = 1.0 / lob;\n"
+    "    vec3 mn4 = min(min(f, g), min(j, k)), mx4 = max(max(f, g), max(j, k));\n"
+    "    vec3 aC = vec3(0.0); float aW = 0.0;\n"
+    "    tap(aC, aW, vec2(0.0, -1.0) - pp, dir, len2, lob, clp, b);\n"
+    "    tap(aC, aW, vec2(1.0, -1.0) - pp, dir, len2, lob, clp, c);\n"
+    "    tap(aC, aW, vec2(-1.0, 1.0) - pp, dir, len2, lob, clp, i);\n"
+    "    tap(aC, aW, vec2(0.0, 1.0) - pp, dir, len2, lob, clp, j);\n"
+    "    tap(aC, aW, vec2(0.0, 0.0) - pp, dir, len2, lob, clp, f);\n"
+    "    tap(aC, aW, vec2(-1.0, 0.0) - pp, dir, len2, lob, clp, e);\n"
+    "    tap(aC, aW, vec2(1.0, 1.0) - pp, dir, len2, lob, clp, k);\n"
+    "    tap(aC, aW, vec2(2.0, 1.0) - pp, dir, len2, lob, clp, l);\n"
+    "    tap(aC, aW, vec2(2.0, 0.0) - pp, dir, len2, lob, clp, h);\n"
+    "    tap(aC, aW, vec2(1.0, 0.0) - pp, dir, len2, lob, clp, g);\n"
+    "    tap(aC, aW, vec2(1.0, 2.0) - pp, dir, len2, lob, clp, oo);\n"
+    "    tap(aC, aW, vec2(0.0, 2.0) - pp, dir, len2, lob, clp, n);\n"
+    "    o = vec4(min(mx4, max(mn4, aC / aW)), 1.0);\n"
+    "}\n";
+
+static const char s_rcas_fs[] =
+    "#version 450\n"
+    "layout(set = 0, binding = 0) uniform sampler2D src;\n"
+    "layout(push_constant) uniform P { vec4 rect; vec4 con; } pc;\n"
+    "layout(location = 0) out vec4 o;\n"
+    "float L(vec3 c) { return c.b * 0.5 + (c.r * 0.5 + c.g); }\n"
+    "void main() {\n"
+    "    ivec2 hi = ivec2(pc.rect.zw) - 1;\n"
+    "    ivec2 p = ivec2(gl_FragCoord.xy - pc.rect.xy);\n"
+    "    vec3 b = texelFetch(src, clamp(p + ivec2(0, -1), ivec2(0), hi), 0).rgb;\n"
+    "    vec3 d = texelFetch(src, clamp(p + ivec2(-1, 0), ivec2(0), hi), 0).rgb;\n"
+    "    vec3 e = texelFetch(src, clamp(p, ivec2(0), hi), 0).rgb;\n"
+    "    vec3 f = texelFetch(src, clamp(p + ivec2(1, 0), ivec2(0), hi), 0).rgb;\n"
+    "    vec3 h = texelFetch(src, clamp(p + ivec2(0, 1), ivec2(0), hi), 0).rgb;\n"
+    "    float bL = L(b), dL = L(d), eL = L(e), fL = L(f), hL = L(h);\n"
+    "    float nz = 0.25 * (bL + dL + fL + hL) - eL;\n"
+    "    float rng = max(max(max(bL, dL), max(eL, fL)), hL) - min(min(min(bL, dL), min(eL, fL)), hL);\n"
+    "    nz = clamp(abs(nz) / max(rng, 1e-5), 0.0, 1.0);\n"
+    "    nz = -0.5 * nz + 1.0;\n"
+    "    vec3 mn4 = min(min(b, d), min(f, h)), mx4 = max(max(b, d), max(f, h));\n"
+    "    vec3 hitMin = min(mn4, e) / max(4.0 * mx4, vec3(1e-5));\n"
+    "    vec3 hitMax = (1.0 - max(mx4, e)) / min(4.0 * mn4 - 4.0, vec3(-1e-5));\n"
+    "    vec3 lobeC = max(-hitMin, hitMax);\n"
+    "    float lobe = max(-0.1875, min(max(lobeC.r, max(lobeC.g, lobeC.b)), 0.0)) * pc.con.x;\n"
+    "    lobe *= nz;\n"
+    "    o = vec4((lobe * (b + d + h + f) + e) / (4.0 * lobe + 1.0), 1.0);\n"
+    "}\n";
+
+static int fsr_on(void)
+{
+    if (s_fsr < 0) {
+        const char *e = getenv("RECOMP_VK_FSR");
+        s_fsr = e && *e == '1';
+        e = getenv("RECOMP_VK_FSR_SHARPNESS");
+        if (e)
+            s_fsr_sharp = (float)atof(e);
+        if (!(s_fsr_sharp >= 0.0f)) s_fsr_sharp = 0.0f;
+        if (s_fsr_sharp > 2.0f) s_fsr_sharp = 2.0f;
+        if (s_fsr)
+            NFS_LOG_INFO("graphics", "  [VK] FSR 1.0 upscaling on, sharpness %.2f stops\n", s_fsr_sharp);
+    }
+    return s_fsr;
+}
+
 static int fxaa_on(void)
 {
     if (s_fxaa < 0) {
@@ -4003,7 +4129,7 @@ static int fxaa_on(void)
     return s_fxaa && nv2a_vk_fxaa;
 }
 
-static VkPipeline pp_pipe(VkFormat fmt)
+static VkPipeline pp_pipe_kind(VkFormat fmt, int kind)
 {
     VkGraphicsPipelineCreateInfo ci = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
     VkPipelineShaderStageCreateInfo st[2];
@@ -4022,8 +4148,8 @@ static VkPipeline pp_pipe(VkFormat fmt)
     int i;
 
     for (i = 0; i < 2; i++)
-        if (s_pp[i].pipe && s_pp[i].fmt == fmt)
-            return s_pp[i].pipe;
+        if (s_pp[kind][i].pipe && s_pp[kind][i].fmt == fmt)
+            return s_pp[kind][i].pipe;
     if (!s_pp_layout) {
         VkDescriptorSetLayoutBinding b = { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
                                            VK_SHADER_STAGE_FRAGMENT_BIT, NULL };
@@ -4050,7 +4176,7 @@ static VkPipeline pp_pipe(VkFormat fmt)
             return VK_NULL_HANDLE;
     }
     vs = compile(GLSLANG_STAGE_VERTEX, s_pp_vs);
-    fs = compile(GLSLANG_STAGE_FRAGMENT, s_pp_fs);
+    fs = compile(GLSLANG_STAGE_FRAGMENT, kind == 1 ? s_easu_fs : kind == 2 ? s_rcas_fs : s_pp_fs);
     if (vs && fs) {
         memset(st, 0, sizeof st);
         st[0].sType = st[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -4094,17 +4220,24 @@ static VkPipeline pp_pipe(VkFormat fmt)
     if (vs) vkDestroyShaderModule(s_dev, vs, NULL);
     if (fs) vkDestroyShaderModule(s_dev, fs, NULL);
     if (!pipe) {
-        NFS_LOG_ERROR("graphics", "  [VK] " "FXAA pipeline failed; presenting with a blit\n");
-        s_fxaa = 0;
+        if (kind) {
+            NFS_LOG_ERROR("graphics", "  [VK] " "FSR pipeline failed; FSR off\n");
+            s_fsr = 0;
+        } else {
+            NFS_LOG_ERROR("graphics", "  [VK] " "FXAA pipeline failed; presenting with a blit\n");
+            s_fxaa = 0;
+        }
         return VK_NULL_HANDLE;
     }
-    i = s_pp[0].pipe ? 1 : 0;
-    if (s_pp[i].pipe)
-        vkDestroyPipeline(s_dev, s_pp[i].pipe, NULL);   /* a third format: never in practice */
-    s_pp[i].fmt = fmt;
-    s_pp[i].pipe = pipe;
+    i = s_pp[kind][0].pipe ? 1 : 0;
+    if (s_pp[kind][i].pipe)
+        vkDestroyPipeline(s_dev, s_pp[kind][i].pipe, NULL);   /* a third format: never in practice */
+    s_pp[kind][i].fmt = fmt;
+    s_pp[kind][i].pipe = pipe;
     return pipe;
 }
+
+static VkPipeline pp_pipe(VkFormat fmt) { return pp_pipe_kind(fmt, 0); }
 
 /* Surface s, FXAA'd and scaled into the rectangle (dx, dy, dw, dh) of dst
  * (cleared to black around it), left in layout `final`. Recorded outside
@@ -4170,6 +4303,118 @@ static int present_fxaa(VkSurf *s, VkImage dst, VkImageView dview, VkFormat fmt,
     b.newLayout = final;
     vkCmdPipelineBarrier(s_cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, final_stage,
                          0, 0, NULL, 0, NULL, 1, &b);
+    s_dyn_valid = 0;
+    return 1;
+}
+
+/* One full-screen pass of a post-process pipeline: src (GENERAL) drawn into
+ * view (cleared) over (dx, dy, dw, dh); the caller handles layouts. */
+static void pp_draw(VkPipeline pipe, VkImageView src, VkImageView view, VkExtent2D ext,
+                    int dx, int dy, int dw, int dh, const float pc[8])
+{
+    VkRenderingAttachmentInfo ca = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    VkRenderingInfo ri = { VK_STRUCTURE_TYPE_RENDERING_INFO };
+    VkViewport vp = { (float)dx, (float)dy, (float)dw, (float)dh, 0.0f, 1.0f };
+    VkRect2D sc = { { dx, dy }, { (uint32_t)dw, (uint32_t)dh } };
+    VkDescriptorImageInfo ii;
+    VkWriteDescriptorSet wr = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+    ca.imageView = view;
+    ca.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    ca.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    ca.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ca.clearValue.color.float32[3] = 1.0f;
+    ri.renderArea.extent = ext;
+    ri.layerCount = 1;
+    ri.colorAttachmentCount = 1;
+    ri.pColorAttachments = &ca;
+    p_begin_rendering(s_cb, &ri);
+    vkCmdBindPipeline(s_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vkCmdSetViewport(s_cb, 0, 1, &vp);
+    vkCmdSetScissor(s_cb, 0, 1, &sc);
+    ii.sampler = s_pp_sampler;
+    ii.imageView = src;
+    ii.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    wr.dstBinding = 0;
+    wr.descriptorCount = 1;
+    wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    wr.pImageInfo = &ii;
+    p_push_desc(s_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, s_pp_layout, 0, 1, &wr);
+    vkCmdPushConstants(s_cb, s_pp_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 8 * sizeof(float), pc);
+    vkCmdDraw(s_cb, 3, 1, 0, 0);
+    p_end_rendering(s_cb);
+}
+
+static void layout_barrier(VkImage img, VkImageLayout from, VkImageLayout to,
+                           VkAccessFlags src_access, VkAccessFlags dst_access,
+                           VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage)
+{
+    VkImageMemoryBarrier b = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    b.srcAccessMask = src_access;
+    b.dstAccessMask = dst_access;
+    b.oldLayout = from;
+    b.newLayout = to;
+    b.srcQueueFamilyIndex = b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = img;
+    b.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    b.subresourceRange.levelCount = 1;
+    b.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(s_cb, src_stage, dst_stage, 0, 0, NULL, 0, NULL, 1, &b);
+}
+
+/* Surface s upscaled with FSR 1 (EASU into the intermediate image, RCAS into
+ * dst's rectangle), dst left in layout `final`. 0 = not recorded. */
+static int present_fsr(VkSurf *s, VkImage dst, VkImageView dview, VkFormat fmt, VkExtent2D ext,
+                       int dx, int dy, int dw, int dh, VkImageLayout final,
+                       VkPipelineStageFlags final_stage)
+{
+    VkPipeline easu = pp_pipe_kind(fmt, 1), rcas = easu ? pp_pipe_kind(fmt, 2) : VK_NULL_HANDLE;
+    VkExtent2D iext = { (uint32_t)dw, (uint32_t)dh };
+    float pc[8];
+
+    if (!easu || !rcas || !dview)
+        return 0;
+    if (!s_fsr_img || s_fsr_w != (uint32_t)dw || s_fsr_h != (uint32_t)dh || s_fsr_fmt != fmt) {
+        if (s_fsr_img) {
+            vkDeviceWaitIdle(s_dev);            /* only on a size change */
+            vkDestroyImageView(s_dev, s_fsr_view, NULL);
+            vkDestroyImage(s_dev, s_fsr_img, NULL);
+            if (s_fsr_mem) vkFreeMemory(s_dev, s_fsr_mem, NULL);
+            else pool_release(s_fsr_img);
+            s_fsr_img = VK_NULL_HANDLE;
+        }
+        if (!make_image((uint32_t)dw, (uint32_t)dh, fmt,
+                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_ASPECT_COLOR_BIT, &s_fsr_img, &s_fsr_view, &s_fsr_mem)) {
+            NFS_LOG_ERROR("graphics", "  [VK] " "FSR image %dx%d failed; FSR off\n", dw, dh);
+            s_fsr = 0;
+            return 0;
+        }
+        s_fsr_w = (uint32_t)dw; s_fsr_h = (uint32_t)dh; s_fsr_fmt = fmt;
+        NFS_LOG_INFO("graphics", "  [VK] FSR %ux%u -> %dx%d\n", s->pw, s->ph, dw, dh);
+    }
+    end_rendering();
+    /* EASU: surface -> intermediate (its whole extent). */
+    layout_barrier(s_fsr_img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                   0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    pc[0] = 0.0f; pc[1] = 0.0f; pc[2] = (float)dw; pc[3] = (float)dh;
+    pc[4] = (float)s->pw; pc[5] = (float)s->ph; pc[6] = 0.0f; pc[7] = 0.0f;
+    pp_draw(easu, s->view, s_fsr_view, iext, 0, 0, dw, dh, pc);
+    layout_barrier(s_fsr_img, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    /* RCAS: intermediate -> dst's rectangle. */
+    layout_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                   0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    pc[0] = (float)dx; pc[1] = (float)dy; pc[2] = (float)dw; pc[3] = (float)dh;
+    pc[4] = exp2f(-s_fsr_sharp); pc[5] = 0.0f; pc[6] = 0.0f; pc[7] = 0.0f;
+    pp_draw(rcas, s_fsr_view, dview, ext, dx, dy, dw, dh, pc);
+    layout_barrier(dst, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, final,
+                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                   final == VK_IMAGE_LAYOUT_GENERAL ? VK_ACCESS_MEMORY_READ_BIT : 0,
+                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, final_stage);
     s_dyn_valid = 0;
     return 1;
 }
@@ -4387,6 +4632,12 @@ static void vk_flip_impl(void)
                 dw = (int)(lw * scale); dh = (int)(lh * scale);
                 dx = ((int)ww - dw) / 2; dy = ((int)wh - dh) / 2;
             }
+            /* FSR only when it enlarges the picture; otherwise FXAA or the blit. */
+            if (dw > 0 && dh > 0 && fsr_on() && (s->pw < (uint32_t)dw || s->ph < (uint32_t)dh)
+                && present_fsr(s, dst, s_sc_views[idx], s_sc_format, s_sc_extent, dx, dy, dw, dh,
+                               VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                               VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT))
+                goto presented;
             if (dw > 0 && dh > 0 && fxaa_on()
                 && present_fxaa(s, dst, s_sc_views[idx], s_sc_format, s_sc_extent, dx, dy, dw, dh,
                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,

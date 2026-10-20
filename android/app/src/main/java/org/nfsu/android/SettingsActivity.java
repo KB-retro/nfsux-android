@@ -27,8 +27,8 @@ public final class SettingsActivity extends Activity {
     private static final int EXPORT_SAVES = 1, IMPORT_SAVES = 2;
     private LauncherSettings settings;
     private LinearLayout rows;
-    private Spinner frameRate, scale, aniso, aspect, language;
-    private Switch fxaa, reflections, blur, square, showFps, fastCores, autoStart;
+    private Spinner frameRate, scale, aniso, aspect, language, fsrSharpness;
+    private Switch fxaa, fsr, reflections, blur, square, showFps, fastCores, autoStart;
     private SeekBar volume;
     private int initialScale;
 
@@ -54,6 +54,11 @@ public final class SettingsActivity extends Activity {
         initialScale = LauncherSettings.indexOf(LauncherSettings.SCALES, settings.option("scale", 150), 1);
         scale = choice(R.string.settings_scale, R.array.settings_scales, initialScale);
         fxaa = toggle(R.string.settings_fxaa, settings.option("fxaa", 1) != 0);
+        fsr = toggle(R.string.settings_fsr, settings.envValue("RECOMP_VK_FSR", 0) == 1);
+        fsrSharpness = choice(R.string.settings_fsr_sharpness, R.array.settings_fsr_sharpness_levels,
+            LauncherSettings.indexOf(LauncherSettings.FSR_SHARPNESS,
+                fsrSharpnessIndex(settings.env.get("RECOMP_VK_FSR_SHARPNESS")), 1));
+        hint(R.string.settings_fsr_hint);
         aniso = choice(R.string.settings_aniso, R.array.settings_aniso_levels,
             LauncherSettings.indexOf(LauncherSettings.ANISO, settings.option("aniso", 16), 4));
         reflections = toggle(R.string.settings_reflections, settings.option("reflections", 1) != 0);
@@ -121,6 +126,9 @@ public final class SettingsActivity extends Activity {
         settings.env.remove("RECOMP_HORPLUS");
         if (aspect.getSelectedItemPosition() == 0) settings.env.remove("RECOMP_WIDESCREEN");
         else settings.env.put("RECOMP_WIDESCREEN", aspect.getSelectedItemPosition() == 1 ? "1" : "0");
+        settings.env.put("RECOMP_VK_FSR", fsr.isChecked() ? "1" : "0");
+        settings.env.put("RECOMP_VK_FSR_SHARPNESS",
+            LauncherSettings.FSR_SHARPNESS_VALUES[fsrSharpness.getSelectedItemPosition()]);
         settings.env.put("RECOMP_FAST_CORES", fastCores.isChecked() ? "1" : "0");
         settings.env.put("RECOMP_AUDIO_VOLUME", Integer.toString(volume.getProgress()));
         settings.env.put("RECOMP_LANGUAGE",
@@ -188,6 +196,13 @@ public final class SettingsActivity extends Activity {
         button.setOnClickListener(listener);
         rows.addView(button, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT));
+    }
+
+    /** Index into FSR_SHARPNESS for a saved RECOMP_VK_FSR_SHARPNESS value; -1 if unknown. */
+    private static int fsrSharpnessIndex(String value) {
+        for (int i = 0; value != null && i < LauncherSettings.FSR_SHARPNESS_VALUES.length; i++)
+            if (LauncherSettings.FSR_SHARPNESS_VALUES[i].equals(value.trim())) return i;
+        return -1;
     }
 
     private int dp(int value) {

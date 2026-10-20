@@ -31,6 +31,9 @@
     <string name="settings_auto_start">Start the game automatically</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
+    <string name="settings_fsr">FSR 1.0 upscaling</string>
+    <string name="settings_fsr_sharpness">Sharpening</string>
+    <string name="settings_fsr_hint">Sharper picture when the game renders below the screen size (resolution 1x or 1.5x). Replaces FXAA while active.</string>
     <string name="settings_fast_cores">Use only the fast CPU cores</string>
     <string name="settings_fast_cores_hint">Experimental. Can help in power-saving profiles that move the game to the slow cores.</string>
     <string name="settings_show_fps">Show FPS counter</string>
@@ -71,5 +74,10 @@
         <item>Automatic</item>
         <item>Widescreen 16:9</item>
         <item>Classic 4:3</item>
+    </string-array>
+    <string-array name="settings_fsr_sharpness_levels">
+        <item>Soft</item>
+        <item>Normal</item>
+        <item>Strong</item>
     </string-array>
 </resources>
