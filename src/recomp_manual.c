@@ -973,7 +973,7 @@ void sub_000192C0(void)
  * Options -> Camera / Controller / Pause Controller live in the Android quick
  * menu and the launcher instead. 1 brings the in-game rows back. */
 #define NFSU1_PORT_MENU_ROWS 0
-/* Main menu: a CREDITS entry (port credits dialog) in place of Trailers. */
+/* Main menu: a PORT CREDITS entry (port credits dialog) in place of Trailers. */
 #define NFSU1_PORT_CREDITS_ROW 1
 #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
 
@@ -1326,14 +1326,18 @@ extern void sub_000C1FD0_gen(void);
 #ifdef __ANDROID__
 extern void android_show_port_credits(void);
 extern void sub_000DC410(void);
-/* In the game's language (RECOMP_LANGUAGE, see sub_00011190). */
+/* In the game's language (RECOMP_LANGUAGE, see sub_00011190). The game's
+ * own Credits entry stays, so this one says port. Accents are single
+ * Windows-1252 bytes, like the game's own texts. */
 static const char *port_credits_label(void)
 {
     const char *e = getenv("RECOMP_LANGUAGE");
     switch (e ? atoi(e) : 1) {
-    case 5: return "CREDITOS";
-    case 6: return "CREDITI";
-    default: return "CREDITS";
+    case 5: return "CR\xC9" "DITOS DEL PORT";
+    case 4: return "CR\xC9" "DITS DU PORT";
+    case 3: return "PORT-CREDITS";
+    case 6: return "CREDITI DEL PORT";
+    default: return "PORT CREDITS";
     }
 }
 static void port_credits_caption(uint32_t object, unsigned depth)
