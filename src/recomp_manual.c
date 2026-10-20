@@ -969,6 +969,9 @@ void sub_000192C0(void)
 #define FE_PAD_RIGHT    0xB5971BF1u
 #define ROW_HANDLER_VA  0x000C0C83u     /* + row index: int3 padding */
 #define ROW_FIRST       3               /* rows 1-2 are the game's */
+/* Handler of Camera row index i: slots 7..9 belong to the Controller rows
+ * (SENSOR_HANDLER_VA), so the eighth row uses slot 10 of the 13 int3 bytes. */
+#define ROW_VA(i)       (ROW_HANDLER_VA + ((i) < 7 ? (uint32_t)(i) : 10u + (uint32_t)(i) - 7u))
 #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
 
 #ifdef NFSU2_VULKAN
@@ -977,6 +980,8 @@ extern volatile int nv2a_vk_scale_pct;
 extern volatile int nv2a_vk_fxaa;
 extern volatile int nv2a_vk_aniso;
 extern volatile int nv2a_vk_square;
+extern volatile int nv2a_vk_fsr;
+extern volatile float nv2a_vk_fsr_sharp;
 #endif
 extern uint32_t xbox_ContiguousAlloc(uint32_t size, uint32_t alignment);
 extern void sub_000C2A70_gen(void);
@@ -994,7 +999,8 @@ static int s_fps60;                     /* experimental; default 30 FPS */
 static int s_refl = 1;                  /* 0 off, 1 on */
 static int s_scale_idx = 1;             /* into s_scale_pct: 1.5x */
 static int s_scale_saved;               /* nfsu1x_options.txt had scale= */
-static int s_fxaa = 1;                  /* 0 off, 1 on */
+static int s_fxaa = 1;                  /* 0 off, 1 FXAA, 2 FSR 1.0 */
+static int s_fsr_sharp_idx = 1;         /* into s_fsr_sharp_stops: Normal */
 static int s_aniso_idx = 4;             /* into s_aniso_lvl: 16x */
 static int s_square = 1;                /* 0 off, 1 on */
 
@@ -1020,9 +1026,14 @@ static void scale_changed(void)
     s_scale_saved = 1;
 }
 
+static const float s_fsr_sharp_stops[] = { 0.5f, 0.2f, 0.0f };
+
 static void picture_changed(void)
 {
-    nv2a_vk_fxaa = s_fxaa;
+    /* FSR falls back to FXAA when the picture is not enlarged. */
+    nv2a_vk_fxaa = s_fxaa != 0;
+    nv2a_vk_fsr = s_fxaa == 2;
+    nv2a_vk_fsr_sharp = s_fsr_sharp_stops[s_fsr_sharp_idx];
     nv2a_vk_aniso = s_aniso_lvl[s_aniso_idx];
     nv2a_vk_square = s_square;
 }
@@ -1032,6 +1043,8 @@ static const char *const s_onoff[] = { "Off", "On" };
 #ifdef NFSU2_VULKAN
 static const char *const s_scale_texts[] = { "1x", "1.5x", "2x", "2.5x" };
 static const char *const s_aniso_texts[] = { "Off", "2x", "4x", "8x", "16x" };
+static const char *const s_aa_texts[] = { "Off", "FXAA", "FSR 1.0" };
+static const char *const s_sharp_texts[] = { "Soft", "Normal", "Strong" };
 #endif
 static const char *const s_fps_texts[] = { "30 FPS", "60 FPS" };
 
@@ -1047,12 +1060,15 @@ static const OptRow s_rows[] = {
     { "Car Reflections:", s_onoff, 2, &s_refl, refl_changed },
 #ifdef NFSU2_VULKAN
     { "Resolution Scale:", s_scale_texts, 4, &s_scale_idx, scale_changed },
-    { "Anti-Aliasing:", s_onoff, 2, &s_fxaa, picture_changed },
+    { "Anti-Aliasing:", s_aa_texts, 3, &s_fxaa, picture_changed },
     { "Anisotropic:", s_aniso_texts, 5, &s_aniso_idx, picture_changed },
     { "Square Pixels:", s_onoff, 2, &s_square, picture_changed },
 #endif
     { "Frame Rate:", s_fps_texts, 2, &s_fps60, frame_rate_changed },
     { "Blur/Bloom:", s_onoff, 2, &s_blur, frame_rate_changed },
+#ifdef NFSU2_VULKAN
+    { "FSR Sharpness:", s_sharp_texts, 3, &s_fsr_sharp_idx, picture_changed },
+#endif
 };
 #define N_ROWS ((int)(sizeof s_rows / sizeof s_rows[0]))
 
@@ -1065,8 +1081,10 @@ static void options_log(void)
     NFS_LOG_INFO("system", "[options] car reflections %s, resolution scale %d%%%s, anti-aliasing %s,"
             " anisotropic %dx, square pixels %s\n",
             s_refl ? "on" : "off", s_scale_pct[s_scale_idx],
-            nv2a_vk_scale_pct ? "" : " (RECOMP_GL_SCALE)", s_fxaa ? "on" : "off",
+            nv2a_vk_scale_pct ? "" : " (RECOMP_GL_SCALE)", s_aa_texts[s_fxaa],
             s_aniso_lvl[s_aniso_idx], s_square ? "on" : "off");
+    if (s_fxaa == 2)
+        NFS_LOG_INFO("system", "[options] FSR sharpness %s\n", s_sharp_texts[s_fsr_sharp_idx]);
 #else
     NFS_LOG_INFO("system", "[options] car reflections %s\n", s_refl ? "on" : "off");
 #endif
@@ -1102,8 +1120,14 @@ void nfsu1_options_load(void)
                 s_blur = line[5] != '0';
             else if (!strncmp(line, "fps=", 4))
                 s_fps60 = atoi(line + 4) == 60;
-            else if (!strncmp(line, "fxaa=", 5))
-                s_fxaa = line[5] != '0';
+            else if (!strncmp(line, "fxaa=", 5)) {
+                int v = atoi(line + 5);
+                s_fxaa = v < 0 ? 0 : v > 2 ? 2 : v;
+            }
+            else if (!strncmp(line, "fsr_sharpness=", 14)) {
+                int v = atoi(line + 14);
+                s_fsr_sharp_idx = v < 0 ? 0 : v > 2 ? 2 : v;
+            }
             else if (!strncmp(line, "square=", 7))
                 s_square = line[7] != '0';
             else if (!strncmp(line, "aniso=", 6)) {
@@ -1159,7 +1183,8 @@ static void options_save(void)
     if (s_scale_saved)
         fprintf(f, "scale=%d\n", s_scale_pct[s_scale_idx]);
 #ifdef NFSU2_VULKAN
-    fprintf(f, "fxaa=%d\naniso=%d\nsquare=%d\n", s_fxaa, s_aniso_lvl[s_aniso_idx], s_square);
+    fprintf(f, "fxaa=%d\naniso=%d\nsquare=%d\nfsr_sharpness=%d\n", s_fxaa, s_aniso_lvl[s_aniso_idx],
+            s_square, s_fsr_sharp_idx);
 #endif
 #ifdef __ANDROID__
     InputMode mode = input_mode_get();
@@ -1257,9 +1282,11 @@ void sub_000C1FD0(void)
 
 static const char *const s_name_obj[] = {
     "OptionName_3", "OptionName_4", "OptionName_5", "OptionName_6", "OptionName_7", "OptionName_8", "OptionName_9",
+    "OptionName_10",
 };
 static const char *const s_data_obj[] = {
     "OptionData_3", "OptionData_4", "OptionData_5", "OptionData_6", "OptionData_7", "OptionData_8", "OptionData_9",
+    "OptionData_10",
 };
 
 static void opt_row_text(uint32_t screen, int i)
@@ -1289,7 +1316,7 @@ void sub_000C2A70(void)
         ecx = screen;
         PUSH32(esp, 0x000C2AB3u);
         sub_000C1E10();                     /* thiscall, pops its 2 */
-        MEM32(screen + 0x3Cu + 4u * (uint32_t)(row - 1)) = ROW_HANDLER_VA + (uint32_t)i;
+        MEM32(screen + 0x3Cu + 4u * (uint32_t)(row - 1)) = ROW_VA(i);
         opt_row_text(screen, i);
     }
 }
@@ -1583,6 +1610,7 @@ static void opt_row_input_3(void) { opt_row_input(3); }
 static void opt_row_input_4(void) { opt_row_input(4); }
 static void opt_row_input_5(void) { opt_row_input(5); }
 static void opt_row_input_6(void) { opt_row_input(6); }
+static void opt_row_input_7(void) { opt_row_input(7); }
 #else
 static void opt_row_input_1(void) { opt_row_input(1); }
 static void opt_row_input_2(void) { opt_row_input(2); }
@@ -1793,17 +1821,20 @@ recomp_func_t recomp_lookup_manual(uint32_t xbox_va)
      * if (xbox_va == 0x000ABCDE) return fixed_sub_000ABCDE;
      */
 
-    if (xbox_va - ROW_HANDLER_VA < (uint32_t)N_ROWS) {
+    {
         static const recomp_func_t row_input[] = {
             opt_row_input_0,
 #ifdef NFSU2_VULKAN
             opt_row_input_1, opt_row_input_2, opt_row_input_3, opt_row_input_4,
-            opt_row_input_5, opt_row_input_6,
+            opt_row_input_5, opt_row_input_6, opt_row_input_7,
 #else
             opt_row_input_1, opt_row_input_2,
 #endif
         };
-        return row_input[xbox_va - ROW_HANDLER_VA];
+        int i;
+        for (i = 0; i < N_ROWS; i++)
+            if (xbox_va == ROW_VA(i))
+                return row_input[i];
     }
     return (recomp_func_t)0;
 }

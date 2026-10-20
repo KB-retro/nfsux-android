@@ -93,16 +93,22 @@ Russian and Spanish and follow the system language.
 
 ## FSR 1.0 upscaling
 
-`RECOMP_VK_FSR=1` (launcher: "FSR 1.0 upscaling", off by default) replaces the
-FXAA present pass with AMD FidelityFX Super Resolution 1 (MIT), ported from
-`ffx_fsr1.h` into two GLSL passes in `nv2a_vk.c`: EASU upscales the surface
-into an intermediate image of the presented rectangle's size, RCAS sharpens it
-into the swapchain. It runs only when the surface is smaller than that
-rectangle (otherwise FXAA or the blit as before). `RECOMP_VK_FSR_SHARPNESS`
-sets RCAS strength in stops, 0 sharpest; the launcher offers 0.5 / 0.2 / 0.
-FSR 2/3 need motion vectors and depth the title does not produce. The shaders
-pass glslangValidator (Vulkan 1.1) and a NumPy mirror of them; not yet run on
-a device.
+Options -> Camera "Anti-Aliasing" is now Off / FXAA / FSR 1.0, and a tenth
+row, "FSR Sharpness" (Soft / Normal / Strong = 0.5 / 0.2 / 0 stops), follows
+Blur/Bloom; both apply at the next present and are saved in
+`nfsu1x_options.txt` (`fxaa=0..2`, `fsr_sharpness=0..2`), which the launcher
+settings edit too. The eighth Camera row's handler uses int3 slot 10 after
+0x000C0C83 (`ROW_VA`), since slots 7..9 belong to the Controller rows.
+
+FSR replaces the FXAA present pass with AMD FidelityFX Super Resolution 1
+(MIT), ported from `ffx_fsr1.h` into two GLSL passes in `nv2a_vk.c`: EASU
+upscales the surface into an intermediate image of the presented rectangle's
+size, RCAS sharpens it into the swapchain. It runs only when the surface is
+smaller than that rectangle; otherwise FXAA is used. `RECOMP_VK_FSR=1` turns
+it on at boot, `=0` forces it off; `RECOMP_VK_FSR_SHARPNESS` sets the start
+strength. FSR 2/3 need motion vectors and depth the title does not produce.
+The shaders pass glslangValidator (Vulkan 1.1) and a NumPy mirror of them;
+not yet run on a device.
 
 ## Performance hints and -O2
 

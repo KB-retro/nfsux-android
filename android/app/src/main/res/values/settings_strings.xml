@@ -19,7 +19,7 @@
     <string name="settings_section_launcher">LAUNCHER</string>
     <string name="settings_frame_rate">Frame rate</string>
     <string name="settings_scale">Resolution scale</string>
-    <string name="settings_fxaa">Anti-aliasing (FXAA)</string>
+    <string name="settings_antialiasing">Anti-aliasing</string>
     <string name="settings_aniso">Anisotropic filtering</string>
     <string name="settings_reflections">Car reflections</string>
     <string name="settings_blur">Blur and bloom</string>
@@ -31,9 +31,8 @@
     <string name="settings_auto_start">Start the game automatically</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
-    <string name="settings_fsr">FSR 1.0 upscaling</string>
     <string name="settings_fsr_sharpness">Sharpening</string>
-    <string name="settings_fsr_hint">Sharper picture when the game renders below the screen size (resolution 1x or 1.5x). Replaces FXAA while active.</string>
+    <string name="settings_fsr_hint">FSR 1.0 gives a sharper picture when the game renders below the screen size (resolution 1x or 1.5x); otherwise FXAA is used. Also in game: Options → Camera.</string>
     <string name="settings_fast_cores">Use only the fast CPU cores</string>
     <string name="settings_fast_cores_hint">Experimental. Can help in power-saving profiles that move the game to the slow cores.</string>
     <string name="settings_show_fps">Show FPS counter</string>
@@ -79,5 +78,10 @@
         <item>Soft</item>
         <item>Normal</item>
         <item>Strong</item>
+    </string-array>
+    <string-array name="settings_antialiasing_modes">
+        <item>Off</item>
+        <item>FXAA</item>
+        <item>FSR 1.0</item>
     </string-array>
 </resources>

@@ -19,7 +19,7 @@
     <string name="settings_section_launcher">ЛАУНЧЕР</string>
     <string name="settings_frame_rate">Частота кадров</string>
     <string name="settings_scale">Масштаб разрешения</string>
-    <string name="settings_fxaa">Сглаживание (FXAA)</string>
+    <string name="settings_antialiasing">Сглаживание</string>
     <string name="settings_aniso">Анизотропная фильтрация</string>
     <string name="settings_reflections">Отражения на машинах</string>
     <string name="settings_blur">Размытие и свечение</string>
@@ -31,9 +31,8 @@
     <string name="settings_auto_start">Запускать игру автоматически</string>
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>
-    <string name="settings_fsr">Масштабирование FSR 1.0</string>
     <string name="settings_fsr_sharpness">Резкость</string>
-    <string name="settings_fsr_hint">Более чёткая картинка, когда игра рендерит меньше разрешения экрана (масштаб 1x или 1.5x). Заменяет FXAA.</string>
+    <string name="settings_fsr_hint">FSR 1.0 даёт более чёткую картинку, когда игра рендерит меньше разрешения экрана (масштаб 1x или 1.5x); иначе используется FXAA. Также в игре: Options → Camera.</string>
     <string name="settings_fast_cores">Только быстрые ядра процессора</string>
     <string name="settings_fast_cores_hint">Экспериментально. Может помочь в энергосберегающих профилях, которые переносят игру на медленные ядра.</string>
     <string name="settings_show_fps">Показывать счётчик FPS</string>
@@ -66,5 +65,10 @@
         <item>Мягкая</item>
         <item>Обычная</item>
         <item>Сильная</item>
+    </string-array>
+    <string-array name="settings_antialiasing_modes">
+        <item>Выкл.</item>
+        <item>FXAA</item>
+        <item>FSR 1.0</item>
     </string-array>
 </resources>

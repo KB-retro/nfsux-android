@@ -19,7 +19,7 @@
     <string name="settings_section_launcher">LAUNCHER</string>
     <string name="settings_frame_rate">Fotogramas por segundo</string>
     <string name="settings_scale">Escala de resolución</string>
-    <string name="settings_fxaa">Antialiasing (FXAA)</string>
+    <string name="settings_antialiasing">Antialiasing</string>
     <string name="settings_aniso">Filtro anisotrópico</string>
     <string name="settings_reflections">Reflejos en los coches</string>
     <string name="settings_blur">Desenfoque y resplandor</string>
@@ -31,9 +31,8 @@
     <string name="settings_auto_start">Iniciar el juego automáticamente</string>
     <string name="settings_saved">Ajustes guardados</string>
     <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
-    <string name="settings_fsr">Escalado FSR 1.0</string>
     <string name="settings_fsr_sharpness">Nitidez</string>
-    <string name="settings_fsr_hint">Imagen más nítida cuando el juego dibuja por debajo de la resolución de la pantalla (escala 1x o 1.5x). Sustituye al FXAA mientras está activo.</string>
+    <string name="settings_fsr_hint">FSR 1.0 da una imagen más nítida cuando el juego dibuja por debajo de la resolución de la pantalla (escala 1x o 1.5x); si no, se usa FXAA. También en el juego: Options → Camera.</string>
     <string name="settings_fast_cores">Usar solo los núcleos rápidos</string>
     <string name="settings_fast_cores_hint">Experimental. Puede ayudar en perfiles de ahorro que mueven el juego a los núcleos lentos.</string>
     <string name="settings_show_fps">Mostrar contador de FPS</string>
@@ -66,5 +65,10 @@
         <item>Suave</item>
         <item>Normal</item>
         <item>Fuerte</item>
+    </string-array>
+    <string-array name="settings_antialiasing_modes">
+        <item>Desactivado</item>
+        <item>FXAA</item>
+        <item>FSR 1.0</item>
     </string-array>
 </resources>

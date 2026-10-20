@@ -27,8 +27,8 @@ public final class SettingsActivity extends Activity {
     private static final int EXPORT_SAVES = 1, IMPORT_SAVES = 2;
     private LauncherSettings settings;
     private LinearLayout rows;
-    private Spinner frameRate, scale, aniso, aspect, language, fsrSharpness;
-    private Switch fxaa, fsr, reflections, blur, square, showFps, fastCores, autoStart;
+    private Spinner frameRate, scale, antialiasing, aniso, aspect, language, fsrSharpness;
+    private Switch reflections, blur, square, showFps, fastCores, autoStart;
     private SeekBar volume;
     private int initialScale;
 
@@ -53,11 +53,11 @@ public final class SettingsActivity extends Activity {
         // 1.5x when nothing chose a scale yet, as in recomp_manual.c.
         initialScale = LauncherSettings.indexOf(LauncherSettings.SCALES, settings.option("scale", 150), 1);
         scale = choice(R.string.settings_scale, R.array.settings_scales, initialScale);
-        fxaa = toggle(R.string.settings_fxaa, settings.option("fxaa", 1) != 0);
-        fsr = toggle(R.string.settings_fsr, settings.envValue("RECOMP_VK_FSR", 0) == 1);
+        // Same values as Options -> Camera in game: fxaa 0 off, 1 FXAA, 2 FSR 1.0.
+        antialiasing = choice(R.string.settings_antialiasing, R.array.settings_antialiasing_modes,
+            Math.max(0, Math.min(2, settings.option("fxaa", 1))));
         fsrSharpness = choice(R.string.settings_fsr_sharpness, R.array.settings_fsr_sharpness_levels,
-            LauncherSettings.indexOf(LauncherSettings.FSR_SHARPNESS,
-                fsrSharpnessIndex(settings.env.get("RECOMP_VK_FSR_SHARPNESS")), 1));
+            Math.max(0, Math.min(2, settings.option("fsr_sharpness", 1))));
         hint(R.string.settings_fsr_hint);
         aniso = choice(R.string.settings_aniso, R.array.settings_aniso_levels,
             LauncherSettings.indexOf(LauncherSettings.ANISO, settings.option("aniso", 16), 4));
@@ -117,7 +117,8 @@ public final class SettingsActivity extends Activity {
         // Leave RECOMP_GL_SCALE in charge until a scale is chosen here or in game.
         if (settings.options.containsKey("scale") || scale.getSelectedItemPosition() != initialScale)
             settings.options.put("scale", Integer.toString(LauncherSettings.SCALES[scale.getSelectedItemPosition()]));
-        settings.options.put("fxaa", fxaa.isChecked() ? "1" : "0");
+        settings.options.put("fxaa", Integer.toString(antialiasing.getSelectedItemPosition()));
+        settings.options.put("fsr_sharpness", Integer.toString(fsrSharpness.getSelectedItemPosition()));
         settings.options.put("aniso", Integer.toString(LauncherSettings.ANISO[aniso.getSelectedItemPosition()]));
         settings.options.put("reflections", reflections.isChecked() ? "1" : "0");
         settings.options.put("blur", blur.isChecked() ? "1" : "0");
@@ -126,9 +127,9 @@ public final class SettingsActivity extends Activity {
         settings.env.remove("RECOMP_HORPLUS");
         if (aspect.getSelectedItemPosition() == 0) settings.env.remove("RECOMP_WIDESCREEN");
         else settings.env.put("RECOMP_WIDESCREEN", aspect.getSelectedItemPosition() == 1 ? "1" : "0");
-        settings.env.put("RECOMP_VK_FSR", fsr.isChecked() ? "1" : "0");
-        settings.env.put("RECOMP_VK_FSR_SHARPNESS",
-            LauncherSettings.FSR_SHARPNESS_VALUES[fsrSharpness.getSelectedItemPosition()]);
+        // FSR now lives in the options file, shared with the in-game rows.
+        settings.env.remove("RECOMP_VK_FSR");
+        settings.env.remove("RECOMP_VK_FSR_SHARPNESS");
         settings.env.put("RECOMP_FAST_CORES", fastCores.isChecked() ? "1" : "0");
         settings.env.put("RECOMP_AUDIO_VOLUME", Integer.toString(volume.getProgress()));
         settings.env.put("RECOMP_LANGUAGE",
@@ -196,13 +197,6 @@ public final class SettingsActivity extends Activity {
         button.setOnClickListener(listener);
         rows.addView(button, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT));
-    }
-
-    /** Index into FSR_SHARPNESS for a saved RECOMP_VK_FSR_SHARPNESS value; -1 if unknown. */
-    private static int fsrSharpnessIndex(String value) {
-        for (int i = 0; value != null && i < LauncherSettings.FSR_SHARPNESS_VALUES.length; i++)
-            if (LauncherSettings.FSR_SHARPNESS_VALUES[i].equals(value.trim())) return i;
-        return -1;
     }
 
     private int dp(int value) {

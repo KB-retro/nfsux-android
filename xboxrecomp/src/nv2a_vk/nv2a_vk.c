@@ -76,6 +76,7 @@
 
 #endif
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -373,6 +374,10 @@ static int      s_square, s_square_env;
  * on/off (at the next flip, like nv2a_vk_scale_pct). The env switches
  * (RECOMP_VK_FXAA=0, RECOMP_VK_SQUARE=0, ...) still force them off. */
 volatile int nv2a_vk_fxaa = 1;
+/* FSR 1.0 at present (Options -> Camera "Anti-Aliasing: FSR 1.0") and its
+ * RCAS strength in stops; RECOMP_VK_FSR / _SHARPNESS set the start values. */
+volatile int nv2a_vk_fsr;
+volatile float nv2a_vk_fsr_sharp = 0.2f;
 volatile int nv2a_vk_aniso = 16;
 volatile int nv2a_vk_square = 1;
 static uint32_t s_max_size = 4096;
@@ -3996,8 +4001,7 @@ static const char s_pp_fs[] =
  * sharpening) draws it to the swapchain, instead of the FXAA pass.
  * RECOMP_VK_FSR_SHARPNESS: RCAS strength in stops, 0 = sharpest (0.2).
  * Ported from ffx_fsr1.h (FsrEasuF, FsrRcasF), 32-bit float path. */
-static int s_fsr = -1;
-static float s_fsr_sharp = 0.2f;
+static int s_fsr = -1;                  /* -1 unread, 0 failed, 1 usable */
 static VkImage s_fsr_img;
 static VkImageView s_fsr_view;
 static VkDeviceMemory s_fsr_mem;
@@ -4103,16 +4107,19 @@ static int fsr_on(void)
 {
     if (s_fsr < 0) {
         const char *e = getenv("RECOMP_VK_FSR");
-        s_fsr = e && *e == '1';
+        s_fsr = 1;
+        if (e && *e == '1') nv2a_vk_fsr = 1;
+        if (e && *e == '0') s_fsr = 0;          /* forced off, as RECOMP_VK_FXAA=0 */
         e = getenv("RECOMP_VK_FSR_SHARPNESS");
-        if (e)
-            s_fsr_sharp = (float)atof(e);
-        if (!(s_fsr_sharp >= 0.0f)) s_fsr_sharp = 0.0f;
-        if (s_fsr_sharp > 2.0f) s_fsr_sharp = 2.0f;
-        if (s_fsr)
-            NFS_LOG_INFO("graphics", "  [VK] FSR 1.0 upscaling on, sharpness %.2f stops\n", s_fsr_sharp);
+        if (e) nv2a_vk_fsr_sharp = (float)atof(e);
     }
-    return s_fsr;
+    return s_fsr && nv2a_vk_fsr;
+}
+
+static float fsr_sharpness(void)
+{
+    float v = nv2a_vk_fsr_sharp;
+    return v >= 0.0f ? (v > 2.0f ? 2.0f : v) : 0.0f;
 }
 
 static int fxaa_on(void)
@@ -4391,7 +4398,8 @@ static int present_fsr(VkSurf *s, VkImage dst, VkImageView dview, VkFormat fmt, 
             return 0;
         }
         s_fsr_w = (uint32_t)dw; s_fsr_h = (uint32_t)dh; s_fsr_fmt = fmt;
-        NFS_LOG_INFO("graphics", "  [VK] FSR %ux%u -> %dx%d\n", s->pw, s->ph, dw, dh);
+        NFS_LOG_INFO("graphics", "  [VK] FSR %ux%u -> %dx%d, sharpness %.2f stops\n",
+                s->pw, s->ph, dw, dh, fsr_sharpness());
     }
     end_rendering();
     /* EASU: surface -> intermediate (its whole extent). */
@@ -4409,7 +4417,7 @@ static int present_fsr(VkSurf *s, VkImage dst, VkImageView dview, VkFormat fmt, 
                    0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     pc[0] = (float)dx; pc[1] = (float)dy; pc[2] = (float)dw; pc[3] = (float)dh;
-    pc[4] = exp2f(-s_fsr_sharp); pc[5] = 0.0f; pc[6] = 0.0f; pc[7] = 0.0f;
+    pc[4] = exp2f(-fsr_sharpness()); pc[5] = 0.0f; pc[6] = 0.0f; pc[7] = 0.0f;
     pp_draw(rcas, s_fsr_view, dview, ext, dx, dy, dw, dh, pc);
     layout_barrier(dst, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, final,
                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,

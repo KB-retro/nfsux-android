@@ -29,9 +29,6 @@ final class LauncherSettings {
     static final int[] LANGUAGES = {1, 5, 4, 3, 6};
     static final int[] SCALES = {100, 150, 200, 250};
     static final int[] ANISO = {1, 2, 4, 8, 16};
-    /** RCAS strength in stops (0 = sharpest), indexed like settings_fsr_sharpness_levels. */
-    static final String[] FSR_SHARPNESS_VALUES = {"0.5", "0.2", "0"};
-    static final int[] FSR_SHARPNESS = {0, 1, 2};
 
     final Map<String, String> options = new LinkedHashMap<>();
     final Map<String, String> env = new LinkedHashMap<>();
