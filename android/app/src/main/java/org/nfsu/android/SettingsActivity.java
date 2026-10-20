@@ -161,33 +161,56 @@ public final class SettingsActivity extends Activity {
         if (result != RESULT_OK || data == null || data.getData() == null) return;
         final Uri uri = data.getData();
         if (request == EXPORT_SAVES) {
-            try {
-                int files = SaveBackup.export(this, uri);
-                Toast.makeText(this, getString(R.string.settings_saves_exported, files), Toast.LENGTH_LONG).show();
-            } catch (IOException | SecurityException exception) {
-                Log.w("NFSU", "Cannot export saves", exception);
-                Toast.makeText(this, R.string.settings_saves_export_failed, Toast.LENGTH_LONG).show();
-            }
+            runBackup(R.string.settings_saves_exporting, new BackupTask() {
+                @Override public int run() throws IOException { return SaveBackup.export(SettingsActivity.this, uri); }
+            }, R.string.settings_saves_exported, R.string.settings_saves_export_failed, false);
         } else if (request == IMPORT_SAVES) {
             new AlertDialog.Builder(this).setTitle(R.string.settings_import_saves)
                 .setMessage(R.string.settings_import_confirm)
                 .setPositiveButton(R.string.settings_import_saves, new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface dialog, int which) { restore(uri); }
+                    @Override public void onClick(DialogInterface dialog, int which) {
+                        runBackup(R.string.settings_saves_importing, new BackupTask() {
+                            @Override public int run() throws IOException { return SaveBackup.restore(SettingsActivity.this, uri); }
+                        }, R.string.settings_saves_imported, R.string.settings_saves_import_failed, true);
+                    }
                 })
                 .setNegativeButton(R.string.action_cancel, null).show();
         }
     }
 
-    private void restore(Uri uri) {
-        try {
-            int files = SaveBackup.restore(this, uri);
-            Toast.makeText(this, getString(R.string.settings_saves_imported, files), Toast.LENGTH_LONG).show();
-            // The restored options file replaces the values shown here.
-            recreate();
-        } catch (IOException | SecurityException exception) {
-            Log.w("NFSU", "Cannot import saves", exception);
-            Toast.makeText(this, R.string.settings_saves_import_failed, Toast.LENGTH_LONG).show();
-        }
+    private interface BackupTask {
+        int run() throws IOException;
+    }
+
+    /** Runs an export or import off the UI thread behind a non-cancelable progress dialog. */
+    private void runBackup(int progress, final BackupTask task, final int done, final int failed,
+                           final boolean reload) {
+        final AlertDialog waiting = new AlertDialog.Builder(this).setMessage(progress)
+            .setCancelable(false).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                int files = -1;
+                try {
+                    files = task.run();
+                } catch (IOException | SecurityException exception) {
+                    Log.w("NFSU", "Save backup failed", exception);
+                }
+                final int count = files;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (isFinishing() || isDestroyed()) return;
+                        waiting.dismiss();
+                        if (count < 0) {
+                            Toast.makeText(SettingsActivity.this, failed, Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Toast.makeText(SettingsActivity.this, getString(done, count), Toast.LENGTH_LONG).show();
+                        // An import replaces the options file shown here.
+                        if (reload) recreate();
+                    }
+                });
+            }
+        }, "save-backup").start();
     }
 
     private void action(int title, View.OnClickListener listener) {

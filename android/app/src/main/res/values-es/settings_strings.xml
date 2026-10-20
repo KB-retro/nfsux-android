@@ -87,4 +87,6 @@
     </string-array>
     <string name="quick_touch_editor">Editar controles táctiles</string>
     <string name="quick_credits">Créditos</string>
+    <string name="settings_saves_exporting">Exportando partidas…</string>
+    <string name="settings_saves_importing">Importando partidas…</string>
 </resources>

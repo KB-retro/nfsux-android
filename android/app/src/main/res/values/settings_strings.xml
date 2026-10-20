@@ -100,4 +100,6 @@
     </string-array>
     <string name="quick_touch_editor">Edit touch controls</string>
     <string name="quick_credits">Credits</string>
+    <string name="settings_saves_exporting">Exporting saves…</string>
+    <string name="settings_saves_importing">Importing saves…</string>
 </resources>

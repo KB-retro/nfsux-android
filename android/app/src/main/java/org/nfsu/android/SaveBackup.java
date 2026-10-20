@@ -12,9 +12,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-/** Zips the save directory (Xbox UserData) and the game options to a document, and restores them. */
+/**
+ * Zips the game saves and options to a document, and restores them.
+ *
+ * Only save/UserData (profiles, career) and save/TitleData hold saves. The
+ * save directory also has the emulated hard disk's Partition1..5.img: sparse
+ * files that report about 5 GB, which the first version read in full on the
+ * UI thread (a long black screen) and whose backups import then refused.
+ */
 final class SaveBackup {
     private static final String SAVE = "save";
+    private static final String[] SAVE_DIRS = {"UserData", "TitleData"};
     private static final long MAX_BYTES = 256L << 20;
 
     private SaveBackup() { }
@@ -31,7 +39,8 @@ final class SaveBackup {
         try (OutputStream output = context.getContentResolver().openOutputStream(target, "wt")) {
             if (output == null) throw new IOException("Cannot write " + target);
             try (ZipOutputStream zip = new ZipOutputStream(output)) {
-                add(zip, new File(root, SAVE), SAVE, count);
+                for (String dir : SAVE_DIRS)
+                    add(zip, new File(new File(root, SAVE), dir), SAVE + "/" + dir, count);
                 File options = new File(root, LauncherSettings.OPTIONS_FILE);
                 if (options.isFile()) add(zip, options, LauncherSettings.OPTIONS_FILE, count);
             }
@@ -55,7 +64,15 @@ final class SaveBackup {
         count[0]++;
     }
 
-    /** Restores a backup over the current saves. Only save/ and the options file are accepted. */
+    /** Whether a backup entry is restored: UserData, TitleData or the options file. */
+    private static boolean restorable(String name) {
+        if (name.equals(LauncherSettings.OPTIONS_FILE)) return true;
+        for (String dir : SAVE_DIRS)
+            if (name.startsWith(SAVE + "/" + dir + "/")) return true;
+        return false;
+    }
+
+    /** Restores a backup over the current saves. Older backups also carry the disk images: skipped. */
     static int restore(Context context, Uri source) throws IOException {
         File root = root(context).getCanonicalFile();
         int count = 0;
@@ -67,7 +84,7 @@ final class SaveBackup {
                 while ((entry = zip.getNextEntry()) != null) {
                     String name = entry.getName();
                     if (entry.isDirectory()) continue;
-                    if (!name.startsWith(SAVE + "/") && !name.equals(LauncherSettings.OPTIONS_FILE)) continue;
+                    if (!restorable(name)) continue;
                     File target = new File(root, name).getCanonicalFile();
                     // Reject entries that escape the app directory (zip slip).
                     if (!target.getPath().startsWith(root.getPath() + File.separator))

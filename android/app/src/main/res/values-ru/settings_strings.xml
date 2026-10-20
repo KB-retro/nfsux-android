@@ -87,4 +87,6 @@
     </string-array>
     <string name="quick_touch_editor">Редактор сенсорного управления</string>
     <string name="quick_credits">Авторы</string>
+    <string name="settings_saves_exporting">Экспорт сохранений…</string>
+    <string name="settings_saves_importing">Импорт сохранений…</string>
 </resources>
