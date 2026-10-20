@@ -31,7 +31,7 @@ sin emulador.
     inglés, y los vídeos que no estén en el idioma elegido se ven en inglés.
   - Inicio automático opcional.
 - **Escalado FSR 1.0** (AMD) con nitidez ajustable: imagen más nítida sin subir la resolución real.
-- **Menú rápido en partida** (Atrás o Select + Start): gráficos, FSR, contador de FPS y núcleos rápidos al momento, sin salir de la carrera.
+- **Menú rápido en partida** (Atrás o Select + Start): gráficos, FSR, contador de FPS, controles táctiles con mando y núcleos rápidos al momento, sin salir de la carrera.
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de
   la carrera y opciones en un `.zip`.

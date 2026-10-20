@@ -83,6 +83,13 @@ final class QuickMenuDialog {
                 activity.setFpsOverlayVisible(value == 1);
             }
         });
+        addRow(activity.getString(R.string.settings_touch_with_controller), new Row() {
+            @Override public String[] values() {
+                return activity.getResources().getStringArray(R.array.settings_touch_with_controller_modes);
+            }
+            @Override public int get() { return GameActivity.nativeTouchWithController() ? 1 : 0; }
+            @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
+        });
         addRow(activity.getString(R.string.settings_fast_cores), new Row() {
             private int value = -1;
             @Override public String[] values() { return offOn(); }

@@ -93,4 +93,9 @@
         <item>Off</item>
         <item>On</item>
     </string-array>
+    <string name="settings_touch_with_controller">Touch controls with a controller</string>
+    <string-array name="settings_touch_with_controller_modes">
+        <item>Hidden</item>
+        <item>Shown</item>
+    </string-array>
 </resources>

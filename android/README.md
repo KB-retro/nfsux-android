@@ -97,8 +97,10 @@ Back (button or gesture) or Select + Start on a controller opens an in-game
 quick menu (`QuickMenuDialog`) instead of leaving the game; "Exit game" in it
 does that after a confirmation. It lists the rows of Options -> Camera plus
 FSR Sharpness through JNI (`nativeOption*` in `recomp_manual.c`: same
-`s_rows`, applied at once and saved to `nfsu1x_options.txt`), the FPS counter
-and fast cores (`nativeSetFastCores`, pinning or unpinning the game and
+`s_rows`, applied at once and saved to `nfsu1x_options.txt`), the FPS counter,
+touch controls with a controller (the Controller screen's SENSOR MODE: Auto,
+hidden while a controller is connected, or On; `sensor_mode=` in the options
+file) and fast cores (`nativeSetFastCores`, pinning or unpinning the game and
 renderer threads live). Controller: up/down choose a row, left/right or A
 change it. Language and picture format need a restart and stay in the
 launcher settings.

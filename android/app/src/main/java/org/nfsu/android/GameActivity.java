@@ -363,6 +363,8 @@ public final class GameActivity extends SDLActivity {
     static native int nativeOptionGet(int index);
     static native void nativeOptionSet(int index, int value);
     static native void nativeSetFastCores(boolean on);
+    static native boolean nativeTouchWithController();
+    static native void nativeSetTouchWithController(boolean on);
 
     private static native void nativeSurfaceChanged(Surface surface, int width, int height);
 

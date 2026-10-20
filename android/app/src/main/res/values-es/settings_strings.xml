@@ -80,4 +80,9 @@
         <item>Desactivado</item>
         <item>Activado</item>
     </string-array>
+    <string name="settings_touch_with_controller">Controles táctiles con mando</string>
+    <string-array name="settings_touch_with_controller_modes">
+        <item>Ocultos</item>
+        <item>Visibles</item>
+    </string-array>
 </resources>

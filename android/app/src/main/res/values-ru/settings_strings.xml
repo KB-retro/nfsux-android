@@ -80,4 +80,9 @@
         <item>Выкл.</item>
         <item>Вкл.</item>
     </string-array>
+    <string name="settings_touch_with_controller">Сенсорное управление с геймпадом</string>
+    <string-array name="settings_touch_with_controller_modes">
+        <item>Скрыто</item>
+        <item>Показано</item>
+    </string-array>
 </resources>

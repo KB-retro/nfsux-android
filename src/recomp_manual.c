@@ -1242,6 +1242,24 @@ JNIEXPORT jint JNICALL Java_org_nfsu_android_GameActivity_nativeOptionGet(JNIEnv
     return i >= 0 && i < N_ROWS ? *s_rows[i].value : 0;
 }
 
+/* Touch controls while a controller is connected: the Controller screen's
+ * SENSOR MODE, Auto (hidden with a controller, the default) or On. */
+JNIEXPORT jboolean JNICALL Java_org_nfsu_android_GameActivity_nativeTouchWithController(JNIEnv *env, jclass cls)
+{
+    (void)env; (void)cls;
+    return input_mode_get().preference == INPUT_SENSOR_ON ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL Java_org_nfsu_android_GameActivity_nativeSetTouchWithController(JNIEnv *env, jclass cls,
+                                                                                       jboolean on)
+{
+    InputMode mode = input_mode_get();
+    (void)env; (void)cls;
+    input_mode_configure(on ? INPUT_SENSOR_ON : INPUT_SENSOR_AUTO, mode.overlay_requested);
+    options_save();
+    NFS_LOG_INFO("input", "[ANDROID] touch controls with a controller: %s (quick menu)\n", on ? "shown" : "auto");
+}
+
 JNIEXPORT void JNICALL Java_org_nfsu_android_GameActivity_nativeOptionSet(JNIEnv *env, jclass cls, jint i, jint v)
 {
     (void)env; (void)cls;
