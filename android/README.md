@@ -91,14 +91,24 @@ the same name; close the game first.
 The launcher, settings and touch-control editor are translated into English,
 Russian and Spanish and follow the system language.
 
+## Quick menu
+
+Back (button or gesture) or Select + Start on a controller opens an in-game
+quick menu (`QuickMenuDialog`) instead of leaving the game; "Exit game" in it
+does that after a confirmation. It lists the rows of Options -> Camera plus
+FSR Sharpness through JNI (`nativeOption*` in `recomp_manual.c`: same
+`s_rows`, applied at once and saved to `nfsu1x_options.txt`), the FPS counter
+and fast cores (`nativeSetFastCores`, pinning or unpinning the game and
+renderer threads live). Controller: up/down choose a row, left/right or A
+change it. Language and picture format need a restart and stay in the
+launcher settings.
+
 ## FSR 1.0 upscaling
 
-Options -> Camera "Anti-Aliasing" is now Off / FXAA / FSR 1.0, and a tenth
-row, "FSR Sharpness" (Soft / Normal / Strong = 0.5 / 0.2 / 0 stops), follows
-Blur/Bloom; both apply at the next present and are saved in
-`nfsu1x_options.txt` (`fxaa=0..2`, `fsr_sharpness=0..2`), which the launcher
-settings edit too. The eighth Camera row's handler uses int3 slot 10 after
-0x000C0C83 (`ROW_VA`), since slots 7..9 belong to the Controller rows.
+Options -> Camera "Anti-Aliasing" is Off / FXAA / FSR 1.0 (`fxaa=0..2`); FSR
+sharpness (Soft / Normal / Strong = 0.5 / 0.2 / 0 stops, `fsr_sharpness=0..2`)
+is in the quick menu and launcher only, since Camera has no free row handler
+slot left in a usable place.
 
 FSR replaces the FXAA present pass with AMD FidelityFX Super Resolution 1
 (MIT), ported from `ffx_fsr1.h` into two GLSL passes in `nv2a_vk.c`: EASU

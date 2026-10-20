@@ -84,4 +84,13 @@
         <item>FXAA</item>
         <item>FSR 1.0</item>
     </string-array>
+    <string name="quick_title">QUICK MENU</string>
+    <string name="quick_resume">Resume</string>
+    <string name="quick_exit">Exit game</string>
+    <string name="quick_exit_confirm">Progress that has not been saved will be lost.</string>
+    <string name="quick_note">Language and picture format: launcher Settings. Open this menu with Back or Select + Start.</string>
+    <string-array name="settings_off_on">
+        <item>Off</item>
+        <item>On</item>
+    </string-array>
 </resources>

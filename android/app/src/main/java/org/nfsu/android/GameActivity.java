@@ -53,6 +53,10 @@ public final class GameActivity extends SDLActivity {
             portCredits.dismiss();
             portCredits = null;
         }
+        if (quickMenu != null) {
+            quickMenu.dismiss();
+            quickMenu = null;
+        }
         if (gameRumble != null) gameRumble.setActive(false);
         super.onDestroy();
     }
@@ -209,9 +213,31 @@ public final class GameActivity extends SDLActivity {
         super.onActivityResult(request, result, data);
     }
 
+    // Back opens the quick menu; leaving the game is its "Exit game" entry.
     @Override public void onBackPressed() {
         if (editorToolbar != null) closeTouchEditor(false);
-        else super.onBackPressed();
+        else showQuickMenu();
+    }
+
+    private android.app.Dialog quickMenu;
+    private boolean selectHeld, startHeld;
+
+    private void showQuickMenu() {
+        if (isFinishing() || isDestroyed() || (quickMenu != null && quickMenu.isShowing())) return;
+        if (raceControls != null) raceControls.cancelInput();
+        selectHeld = startHeld = false;
+        quickMenu = QuickMenuDialog.show(this);
+        quickMenu.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+            @Override public void onDismiss(android.content.DialogInterface dialog) {
+                quickMenu = null;
+                restoreFullscreen();
+            }
+        });
+    }
+
+    /** The quick menu's "Exit game": the system back behaviour this activity replaced. */
+    void exitGame() {
+        super.onBackPressed();
     }
 
     @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
@@ -219,6 +245,19 @@ public final class GameActivity extends SDLActivity {
             if (event.getAction() == android.view.KeyEvent.ACTION_UP
                     && event.getKeyCode() == android.view.KeyEvent.KEYCODE_BACK) closeTouchEditor(false);
             return true;
+        }
+        // Controller: Select + Start together open the quick menu (Start still
+        // reaches the game first, which pauses a race).
+        int code = event.getKeyCode();
+        if (code == android.view.KeyEvent.KEYCODE_BUTTON_SELECT || code == android.view.KeyEvent.KEYCODE_BUTTON_START) {
+            boolean down = event.getAction() == android.view.KeyEvent.ACTION_DOWN;
+            if (code == android.view.KeyEvent.KEYCODE_BUTTON_SELECT) selectHeld = down;
+            else startHeld = down;
+            if (down && event.getRepeatCount() == 0 && selectHeld && startHeld) {
+                boolean handled = super.dispatchKeyEvent(event);
+                showQuickMenu();
+                return handled;
+            }
         }
         return super.dispatchKeyEvent(event);
     }
@@ -259,7 +298,13 @@ public final class GameActivity extends SDLActivity {
         mLayout.addView(raceControls, new android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-        if (LauncherSettings.showFps(this)) {
+        setFpsOverlayVisible(LauncherSettings.showFps(this));
+        restoreFullscreen();
+    }
+
+    /** FPS counter in the top-left corner; the quick menu switches it at run time. */
+    void setFpsOverlayVisible(boolean show) {
+        if (show && fpsOverlay == null) {
             fpsOverlay = new android.widget.TextView(this);
             fpsOverlay.setTextColor(0xFFB8E9F5);
             fpsOverlay.setTextSize(13);
@@ -270,8 +315,13 @@ public final class GameActivity extends SDLActivity {
             mLayout.addView(fpsOverlay, new android.view.ViewGroup.LayoutParams(
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+            fpsLastFrames = -1;
+            fpsOverlay.post(fpsUpdate);
+        } else if (!show && fpsOverlay != null) {
+            fpsOverlay.removeCallbacks(fpsUpdate);
+            mLayout.removeView(fpsOverlay);
+            fpsOverlay = null;
         }
-        restoreFullscreen();
     }
 
     @Override
@@ -306,6 +356,13 @@ public final class GameActivity extends SDLActivity {
     }
 
     private static native int nativePresentedFrames();
+    // Quick menu (recomp_manual.c, android_perf_hint.c).
+    static native int nativeOptionCount();
+    static native String nativeOptionLabel(int index);
+    static native String[] nativeOptionValues(int index);
+    static native int nativeOptionGet(int index);
+    static native void nativeOptionSet(int index, int value);
+    static native void nativeSetFastCores(boolean on);
 
     private static native void nativeSurfaceChanged(Surface surface, int width, int height);
 

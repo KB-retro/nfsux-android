@@ -38,8 +38,10 @@ static int64_t s_session_target, s_last_ns;
  * the cores whose maximum frequency is at least 80% of the fastest one. Some
  * power-saving profiles otherwise move the game onto the little cores. */
 static pthread_once_t s_fast_once = PTHREAD_ONCE_INIT;
-static int s_fast_enabled;
-static cpu_set_t s_fast;
+static atomic_int s_fast_enabled;
+static cpu_set_t s_fast, s_all;         /* fast cores; every core that has cpufreq */
+static int s_fast_count;
+static atomic_int s_renderer_tid;
 
 static void find_fast_cores(void)
 {
@@ -47,7 +49,6 @@ static void find_fast_cores(void)
     long freq[64], best = 0;
     int n = 0, i, count = 0;
 
-    if (!e || e[0] != '1') return;
     for (i = 0; i < 64; i++) {
         char path[96];
         FILE *f;
@@ -60,17 +61,21 @@ static void find_fast_cores(void)
         n = i + 1;
     }
     CPU_ZERO(&s_fast);
-    for (i = 0; i < n; i++)
+    CPU_ZERO(&s_all);
+    for (i = 0; i < n; i++) {
+        if (freq[i]) CPU_SET(i, &s_all);
         if (best && freq[i] * 10 >= best * 8) { CPU_SET(i, &s_fast); count++; }
-    s_fast_enabled = count > 0;
-    NFS_LOG_INFO("performance", "[cores] RECOMP_FAST_CORES: %d of %d cores at >= %ld MHz\n",
-            count, n, best * 8 / 10 / 1000);
+    }
+    s_fast_count = count;
+    atomic_store(&s_fast_enabled, e && e[0] == '1' && count > 0);
+    NFS_LOG_INFO("performance", "[cores] fast cores: %d of %d at >= %ld MHz, %s\n",
+            count, n, best * 8 / 10 / 1000, atomic_load(&s_fast_enabled) ? "on" : "off");
 }
 
 static void pin_fast_cores(const char *who)
 {
     pthread_once(&s_fast_once, find_fast_cores);
-    if (!s_fast_enabled) return;
+    if (!atomic_load(&s_fast_enabled)) return;
     if (sched_setaffinity(0, sizeof s_fast, &s_fast) == 0)
         NFS_LOG_INFO("performance", "[cores] %s thread pinned to the fast cores\n", who);
     else
@@ -87,7 +92,7 @@ static void repin_fast_cores(void)
     int n = atomic_load(&s_ntids), i, fixed = 0;
     pid_t self = (pid_t)syscall(SYS_gettid);
 
-    if (!s_fast_enabled) return;
+    if (!atomic_load(&s_fast_enabled)) return;
     for (i = -1; i < n && i < MAX_THREADS; i++) {
         pid_t tid = i < 0 ? self : s_tids[i];
         if (sched_getaffinity(tid, sizeof now, &now) != 0 || CPU_EQUAL(&now, &s_fast)) continue;
@@ -97,6 +102,25 @@ static void repin_fast_cores(void)
         logged++;
         NFS_LOG_INFO("performance", "[cores] %d thread(s) pinned again to the fast cores\n", fixed);
     }
+}
+
+/* Quick menu switch: pin the game and renderer threads to the fast cores,
+ * or let them run on every core again. */
+void android_perf_hint_set_fast_cores(int on)
+{
+    const cpu_set_t *set;
+    int n, i;
+
+    pthread_once(&s_fast_once, find_fast_cores);
+    on = on && s_fast_count > 0;
+    atomic_store(&s_fast_enabled, on);
+    set = on ? &s_fast : &s_all;
+    n = atomic_load(&s_ntids);
+    for (i = -1; i < n && i < MAX_THREADS; i++) {
+        pid_t tid = i < 0 ? (pid_t)atomic_load(&s_renderer_tid) : s_tids[i];
+        if (tid > 0) sched_setaffinity(tid, sizeof *set, set);
+    }
+    NFS_LOG_INFO("performance", "[cores] fast cores %s from the quick menu\n", on ? "on" : "off");
 }
 
 void android_perf_hint_add_thread(void)
@@ -130,6 +154,7 @@ static void start_session(void)
     int n = atomic_load(&s_ntids), i;
 
     s_state = -1;
+    atomic_store(&s_renderer_tid, (int)syscall(SYS_gettid));
     pin_fast_cores("renderer");
     if (e && e[0] == '0') {
         NFS_LOG_INFO("performance", "[perfhint] off (RECOMP_PERF_HINT=0)\n");
@@ -180,4 +205,11 @@ void android_perf_hint_frame(void)
         if (work > 0) s_report(s_session, work);
     }
     s_last_ns = t;
+}
+
+#include <jni.h>
+JNIEXPORT void JNICALL Java_org_nfsu_android_GameActivity_nativeSetFastCores(JNIEnv *env, jclass cls, jboolean on)
+{
+    (void)env; (void)cls;
+    android_perf_hint_set_fast_cores(on != JNI_FALSE);
 }

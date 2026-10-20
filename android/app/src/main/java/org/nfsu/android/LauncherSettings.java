@@ -67,6 +67,12 @@ final class LauncherSettings {
             "# Written by the launcher settings. nfsu1x_env.txt overrides these values.\n");
     }
 
+    /** Only nfsu1x_launcher.txt: the game process saves its options file itself. */
+    void saveEnv() throws IOException {
+        write(new File(directory, ENV_FILE), env,
+            "# Written by the launcher settings. nfsu1x_env.txt overrides these values.\n");
+    }
+
     int option(String key, int fallback) {
         return parse(options.get(key), fallback);
     }

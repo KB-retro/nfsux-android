@@ -969,9 +969,6 @@ void sub_000192C0(void)
 #define FE_PAD_RIGHT    0xB5971BF1u
 #define ROW_HANDLER_VA  0x000C0C83u     /* + row index: int3 padding */
 #define ROW_FIRST       3               /* rows 1-2 are the game's */
-/* Handler of Camera row index i: slots 7..9 belong to the Controller rows
- * (SENSOR_HANDLER_VA), so the eighth row uses slot 10 of the 13 int3 bytes. */
-#define ROW_VA(i)       (ROW_HANDLER_VA + ((i) < 7 ? (uint32_t)(i) : 10u + (uint32_t)(i) - 7u))
 #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
 
 #ifdef NFSU2_VULKAN
@@ -1071,6 +1068,13 @@ static const OptRow s_rows[] = {
 #endif
 };
 #define N_ROWS ((int)(sizeof s_rows / sizeof s_rows[0]))
+/* Options -> Camera has room for seven rows (3..9); FSR Sharpness, the last
+ * row, is only in the Android quick menu and the launcher settings. */
+#ifdef NFSU2_VULKAN
+#define N_CAMERA_ROWS (N_ROWS - 1)
+#else
+#define N_CAMERA_ROWS N_ROWS
+#endif
 
 static void options_log(void)
 {
@@ -1193,6 +1197,62 @@ static void options_save(void)
     fclose(f);
 }
 
+#ifdef __ANDROID__
+#include <jni.h>
+/* Quick menu (GameActivity, UI thread): the same rows as Options -> Camera
+ * plus FSR Sharpness, applied at once and saved like the in-game rows. */
+JNIEXPORT jint JNICALL Java_org_nfsu_android_GameActivity_nativeOptionCount(JNIEnv *env, jclass cls)
+{
+    (void)env; (void)cls;
+    return N_ROWS;
+}
+
+JNIEXPORT jstring JNICALL Java_org_nfsu_android_GameActivity_nativeOptionLabel(JNIEnv *env, jclass cls, jint i)
+{
+    char label[64];
+    size_t n;
+    (void)cls;
+    if (i < 0 || i >= N_ROWS) return NULL;
+    snprintf(label, sizeof label, "%s", s_rows[i].label);
+    n = strlen(label);
+    if (n && label[n - 1] == ':') label[n - 1] = 0;
+    return (*env)->NewStringUTF(env, label);
+}
+
+JNIEXPORT jobjectArray JNICALL Java_org_nfsu_android_GameActivity_nativeOptionValues(JNIEnv *env, jclass cls, jint i)
+{
+    jobjectArray values;
+    jclass string_class;
+    int k;
+    (void)cls;
+    if (i < 0 || i >= N_ROWS) return NULL;
+    string_class = (*env)->FindClass(env, "java/lang/String");
+    values = (*env)->NewObjectArray(env, s_rows[i].n, string_class, NULL);
+    for (k = 0; values && k < s_rows[i].n; k++) {
+        jstring text = (*env)->NewStringUTF(env, s_rows[i].texts[k]);
+        (*env)->SetObjectArrayElement(env, values, k, text);
+        (*env)->DeleteLocalRef(env, text);
+    }
+    return values;
+}
+
+JNIEXPORT jint JNICALL Java_org_nfsu_android_GameActivity_nativeOptionGet(JNIEnv *env, jclass cls, jint i)
+{
+    (void)env; (void)cls;
+    return i >= 0 && i < N_ROWS ? *s_rows[i].value : 0;
+}
+
+JNIEXPORT void JNICALL Java_org_nfsu_android_GameActivity_nativeOptionSet(JNIEnv *env, jclass cls, jint i, jint v)
+{
+    (void)env; (void)cls;
+    if (i < 0 || i >= N_ROWS || v < 0 || v >= s_rows[i].n || *s_rows[i].value == v) return;
+    *s_rows[i].value = v;
+    s_rows[i].changed();
+    options_save();
+    options_log();
+}
+#endif
+
 /* Our texts in guest memory, each copied once. */
 static uint32_t guest_str(const char *s)
 {
@@ -1282,11 +1342,9 @@ void sub_000C1FD0(void)
 
 static const char *const s_name_obj[] = {
     "OptionName_3", "OptionName_4", "OptionName_5", "OptionName_6", "OptionName_7", "OptionName_8", "OptionName_9",
-    "OptionName_10",
 };
 static const char *const s_data_obj[] = {
     "OptionData_3", "OptionData_4", "OptionData_5", "OptionData_6", "OptionData_7", "OptionData_8", "OptionData_9",
-    "OptionData_10",
 };
 
 static void opt_row_text(uint32_t screen, int i)
@@ -1303,7 +1361,7 @@ void sub_000C2A70(void)
     int i;
 
     sub_000C2A70_gen();
-    for (i = 0; i < N_ROWS; i++) {
+    for (i = 0; i < N_CAMERA_ROWS; i++) {
         int row = ROW_FIRST + i;
         PUSH32(esp, 0);                     /* no select button */
         PUSH32(esp, 1);                     /* value text */
@@ -1316,7 +1374,7 @@ void sub_000C2A70(void)
         ecx = screen;
         PUSH32(esp, 0x000C2AB3u);
         sub_000C1E10();                     /* thiscall, pops its 2 */
-        MEM32(screen + 0x3Cu + 4u * (uint32_t)(row - 1)) = ROW_VA(i);
+        MEM32(screen + 0x3Cu + 4u * (uint32_t)(row - 1)) = ROW_HANDLER_VA + (uint32_t)i;
         opt_row_text(screen, i);
     }
 }
@@ -1610,7 +1668,6 @@ static void opt_row_input_3(void) { opt_row_input(3); }
 static void opt_row_input_4(void) { opt_row_input(4); }
 static void opt_row_input_5(void) { opt_row_input(5); }
 static void opt_row_input_6(void) { opt_row_input(6); }
-static void opt_row_input_7(void) { opt_row_input(7); }
 #else
 static void opt_row_input_1(void) { opt_row_input(1); }
 static void opt_row_input_2(void) { opt_row_input(2); }
@@ -1821,20 +1878,17 @@ recomp_func_t recomp_lookup_manual(uint32_t xbox_va)
      * if (xbox_va == 0x000ABCDE) return fixed_sub_000ABCDE;
      */
 
-    {
+    if (xbox_va - ROW_HANDLER_VA < (uint32_t)N_CAMERA_ROWS) {
         static const recomp_func_t row_input[] = {
             opt_row_input_0,
 #ifdef NFSU2_VULKAN
             opt_row_input_1, opt_row_input_2, opt_row_input_3, opt_row_input_4,
-            opt_row_input_5, opt_row_input_6, opt_row_input_7,
+            opt_row_input_5, opt_row_input_6,
 #else
             opt_row_input_1, opt_row_input_2,
 #endif
         };
-        int i;
-        for (i = 0; i < N_ROWS; i++)
-            if (xbox_va == ROW_VA(i))
-                return row_input[i];
+        return row_input[xbox_va - ROW_HANDLER_VA];
     }
     return (recomp_func_t)0;
 }

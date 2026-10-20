@@ -71,4 +71,13 @@
         <item>FXAA</item>
         <item>FSR 1.0</item>
     </string-array>
+    <string name="quick_title">MENÚ RÁPIDO</string>
+    <string name="quick_resume">Continuar</string>
+    <string name="quick_exit">Salir del juego</string>
+    <string name="quick_exit_confirm">Se perderá el progreso que no esté guardado.</string>
+    <string name="quick_note">Idioma y formato de imagen: Ajustes del launcher. Este menú se abre con Atrás o Select + Start.</string>
+    <string-array name="settings_off_on">
+        <item>Desactivado</item>
+        <item>Activado</item>
+    </string-array>
 </resources>
