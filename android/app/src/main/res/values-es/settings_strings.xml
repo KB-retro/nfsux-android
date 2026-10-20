@@ -75,12 +75,12 @@
     <string name="quick_resume">Continuar</string>
     <string name="quick_exit">Salir del juego</string>
     <string name="quick_exit_confirm">Se perderá el progreso que no esté guardado.</string>
-    <string name="quick_note">Idioma y formato de imagen: Ajustes del launcher. Este menú se abre con Atrás o Select + Start.</string>
+    <string name="quick_note">El idioma y el formato de imagen se aplican al reiniciar. Este menú se abre con Atrás o Select + Start.</string>
     <string-array name="settings_off_on">
         <item>Desactivado</item>
         <item>Activado</item>
     </string-array>
-    <string name="settings_touch_with_controller">Controles táctiles con mando</string>
+    <string name="settings_touch_with_controller">Controles táctiles</string>
     <string-array name="settings_touch_with_controller_modes">
         <item>Ocultos</item>
         <item>Visibles</item>
@@ -89,4 +89,9 @@
     <string name="quick_credits">Créditos</string>
     <string name="settings_saves_exporting">Exportando partidas…</string>
     <string name="settings_saves_importing">Importando partidas…</string>
+    <string name="quick_restart_title">Hay que reiniciar</string>
+    <string name="quick_restart_message">El nuevo idioma o formato de imagen se aplica al reiniciar el juego. ¿Reiniciar ahora? Se perderá el progreso que no esté guardado.</string>
+    <string name="quick_restart_now">Reiniciar ahora</string>
+    <string name="quick_restart_later">Más tarde</string>
+    <string name="launcher_restarting">Reiniciando el juego…</string>
 </resources>

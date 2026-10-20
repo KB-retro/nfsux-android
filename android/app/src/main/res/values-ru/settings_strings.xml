@@ -75,12 +75,12 @@
     <string name="quick_resume">Продолжить</string>
     <string name="quick_exit">Выйти из игры</string>
     <string name="quick_exit_confirm">Несохранённый прогресс будет потерян.</string>
-    <string name="quick_note">Язык и формат изображения: настройки лаунчера. Это меню открывается кнопкой «Назад» или Select + Start.</string>
+    <string name="quick_note">Язык и формат изображения применяются после перезапуска. Это меню открывается кнопкой «Назад» или Select + Start.</string>
     <string-array name="settings_off_on">
         <item>Выкл.</item>
         <item>Вкл.</item>
     </string-array>
-    <string name="settings_touch_with_controller">Сенсорное управление с геймпадом</string>
+    <string name="settings_touch_with_controller">Сенсорное управление</string>
     <string-array name="settings_touch_with_controller_modes">
         <item>Скрыто</item>
         <item>Показано</item>
@@ -89,4 +89,9 @@
     <string name="quick_credits">Авторы</string>
     <string name="settings_saves_exporting">Экспорт сохранений…</string>
     <string name="settings_saves_importing">Импорт сохранений…</string>
+    <string name="quick_restart_title">Нужен перезапуск</string>
+    <string name="quick_restart_message">Новый язык или формат изображения применится после перезапуска игры. Перезапустить сейчас? Несохранённый прогресс будет потерян.</string>
+    <string name="quick_restart_now">Перезапустить</string>
+    <string name="quick_restart_later">Позже</string>
+    <string name="launcher_restarting">Перезапуск игры…</string>
 </resources>

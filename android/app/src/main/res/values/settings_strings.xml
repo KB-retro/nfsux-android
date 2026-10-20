@@ -88,12 +88,12 @@
     <string name="quick_resume">Resume</string>
     <string name="quick_exit">Exit game</string>
     <string name="quick_exit_confirm">Progress that has not been saved will be lost.</string>
-    <string name="quick_note">Language and picture format: launcher Settings. Open this menu with Back or Select + Start.</string>
+    <string name="quick_note">Language and picture format apply after a restart. Open this menu with Back or Select + Start.</string>
     <string-array name="settings_off_on">
         <item>Off</item>
         <item>On</item>
     </string-array>
-    <string name="settings_touch_with_controller">Touch controls with a controller</string>
+    <string name="settings_touch_with_controller">Touch controls</string>
     <string-array name="settings_touch_with_controller_modes">
         <item>Hidden</item>
         <item>Shown</item>
@@ -102,4 +102,9 @@
     <string name="quick_credits">Credits</string>
     <string name="settings_saves_exporting">Exporting saves…</string>
     <string name="settings_saves_importing">Importing saves…</string>
+    <string name="quick_restart_title">Restart needed</string>
+    <string name="quick_restart_message">The new language or picture format applies when the game restarts. Restart now? Progress that has not been saved will be lost.</string>
+    <string name="quick_restart_now">Restart now</string>
+    <string name="quick_restart_later">Later</string>
+    <string name="launcher_restarting">Restarting the game…</string>
 </resources>

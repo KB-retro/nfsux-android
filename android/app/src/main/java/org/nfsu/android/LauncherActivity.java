@@ -18,7 +18,10 @@ import java.util.concurrent.Executors;
 
 /** Selects the user's disc folder, opens the settings and starts the native game. */
 public final class LauncherActivity extends Activity {
+    /** Set by the quick menu's restart: start the game again as soon as the folder checks out. */
+    static final String EXTRA_RESTART = "restart";
     private static final int PICK_GAME = 1;
+    private static final long RESTART_DELAY_MS = 500;
     private static final long AUTO_START_DELAY_MS = 1500;
     private final ExecutorService folderChecker = Executors.newSingleThreadExecutor();
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -28,10 +31,12 @@ public final class LauncherActivity extends Activity {
     private TextView status;
     private Button chooseButton;
     private boolean folderReady;
+    private boolean restartRequested;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        restartRequested = savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_RESTART, false);
         String tree = getSharedPreferences("game", MODE_PRIVATE).getString("tree", null);
         showMenu("");
         if (tree != null) {
@@ -148,7 +153,11 @@ public final class LauncherActivity extends Activity {
         play.setVisibility(View.VISIBLE);
         play.requestFocus();
         status.setVisibility(View.VISIBLE);
-        if (allowAutoStart && LauncherSettings.autoStart(this)) {
+        if (restartRequested) {
+            restartRequested = false;
+            status.setText(R.string.launcher_restarting);
+            handler.postDelayed(autoStart, RESTART_DELAY_MS);
+        } else if (allowAutoStart && LauncherSettings.autoStart(this)) {
             status.setText(R.string.launcher_auto_starting);
             handler.postDelayed(autoStart, AUTO_START_DELAY_MS);
         } else {

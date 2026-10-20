@@ -241,6 +241,15 @@ public final class GameActivity extends SDLActivity {
         super.onBackPressed();
     }
 
+    /** New settings need a new native game: the launcher starts it again in a fresh :game process. */
+    void restartGame() {
+        android.content.Intent launcher = new android.content.Intent(this, LauncherActivity.class)
+            .putExtra(LauncherActivity.EXTRA_RESTART, true)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(launcher);
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
+
     @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
         if (editorToolbar != null) {
             if (event.getAction() == android.view.KeyEvent.ACTION_UP

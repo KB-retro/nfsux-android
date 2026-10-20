@@ -22,9 +22,9 @@ import java.io.IOException;
 
 /**
  * In-game quick menu (Back, or Select + Start on a controller): the picture
- * rows of Options -> Camera plus FSR sharpness, the FPS counter and fast
- * cores, applied at once. Language and picture format need a restart and
- * stay in the launcher settings.
+ * rows of Options -> Camera plus FSR sharpness, the FPS counter, fast cores
+ * and touch controls, applied at once. Language and picture format are saved
+ * for the next start; closing the menu after changing them offers a restart.
  */
 final class QuickMenuDialog {
     /** A value row: one label, n values, cycled with left/right or the arrows. */
@@ -34,9 +34,13 @@ final class QuickMenuDialog {
         void set(int value);
     }
 
+    /** Language and picture format this game process started with (-1: not read yet). */
+    private static int startLanguage = -1, startAspect = -1;
+
     private final GameActivity activity;
     private final Dialog dialog;
     private final LinearLayout rows;
+    private boolean restartSettingChanged;
 
     private QuickMenuDialog(GameActivity activity) {
         this.activity = activity;
@@ -83,13 +87,6 @@ final class QuickMenuDialog {
                 activity.setFpsOverlayVisible(value == 1);
             }
         });
-        addRow(activity.getString(R.string.settings_touch_with_controller), new Row() {
-            @Override public String[] values() {
-                return activity.getResources().getStringArray(R.array.settings_touch_with_controller_modes);
-            }
-            @Override public int get() { return GameActivity.nativeTouchWithController() ? 1 : 0; }
-            @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
-        });
         addRow(activity.getString(R.string.settings_fast_cores), new Row() {
             private int value = -1;
             @Override public String[] values() { return offOn(); }
@@ -114,6 +111,15 @@ final class QuickMenuDialog {
                     Log.w("NFSU", "Cannot save fast cores", exception);
                 }
             }
+        });
+
+        addRestartRows();
+        addRow(activity.getString(R.string.settings_touch_with_controller), new Row() {
+            @Override public String[] values() {
+                return activity.getResources().getStringArray(R.array.settings_touch_with_controller_modes);
+            }
+            @Override public int get() { return GameActivity.nativeTouchWithController() ? 1 : 0; }
+            @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
         });
 
         // Former in-game rows (Controller: TOUCH CONTROL LAYOUT, main menu: ANDROID PORT).
@@ -151,7 +157,7 @@ final class QuickMenuDialog {
         });
         Button resume = button(R.string.quick_resume);
         resume.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View view) { dialog.dismiss(); }
+            @Override public void onClick(View view) { close(); }
         });
         LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
         half.setMarginEnd(dp(8));
@@ -159,6 +165,9 @@ final class QuickMenuDialog {
         buttons.addView(resume, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         panel.addView(buttons);
 
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override public void onCancel(DialogInterface cancelled) { offerRestart(); }
+        });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(panel);
         Window window = dialog.getWindow();
@@ -179,6 +188,81 @@ final class QuickMenuDialog {
                     Math.min(dp(520), metrics.heightPixels - dp(16)));
         }
         if (rows.getChildCount() > 0) rows.getChildAt(0).requestFocus();
+    }
+
+    /** Language and picture format: nfsu1x_launcher.txt, read by the next game start. */
+    private void addRestartRows() {
+        final LauncherSettings settings = new LauncherSettings(activity);
+        try {
+            settings.load();
+        } catch (IOException exception) {
+            Log.w("NFSU", "Cannot read launcher settings", exception);
+        }
+        if (startLanguage < 0) {
+            startLanguage = language(settings);
+            startAspect = aspect(settings);
+        }
+        addRow(activity.getString(R.string.settings_language), new Row() {
+            @Override public String[] values() {
+                return activity.getResources().getStringArray(R.array.settings_languages);
+            }
+            @Override public int get() { return language(settings); }
+            @Override public void set(int value) {
+                settings.env.put("RECOMP_LANGUAGE", String.valueOf(LauncherSettings.LANGUAGES[value]));
+                saveRestartSetting(settings);
+            }
+        });
+        // Automatic leaves RECOMP_WIDESCREEN unset; GameActivity then picks it from the screen.
+        addRow(activity.getString(R.string.settings_aspect), new Row() {
+            @Override public String[] values() {
+                return activity.getResources().getStringArray(R.array.settings_aspects);
+            }
+            @Override public int get() { return aspect(settings); }
+            @Override public void set(int value) {
+                if (value == 0) settings.env.remove("RECOMP_WIDESCREEN");
+                else settings.env.put("RECOMP_WIDESCREEN", value == 1 ? "1" : "0");
+                saveRestartSetting(settings);
+            }
+        });
+    }
+
+    private static int language(LauncherSettings settings) {
+        return LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 5), 0);
+    }
+
+    private static int aspect(LauncherSettings settings) {
+        if (!settings.env.containsKey("RECOMP_WIDESCREEN")) return 0;
+        return settings.envValue("RECOMP_WIDESCREEN", 1) == 0 ? 2 : 1;
+    }
+
+    private void saveRestartSetting(LauncherSettings settings) {
+        try {
+            settings.saveEnv();
+        } catch (IOException exception) {
+            Log.w("NFSU", "Cannot save launcher settings", exception);
+        }
+        restartSettingChanged = language(settings) != startLanguage || aspect(settings) != startAspect;
+    }
+
+    private void close() {
+        dialog.dismiss();
+        offerRestart();
+    }
+
+    /** After a language or picture format change: restart now, or keep playing. */
+    private void offerRestart() {
+        if (!restartSettingChanged || activity.isFinishing()) return;
+        restartSettingChanged = false;
+        new AlertDialog.Builder(activity)
+                .setTitle(R.string.quick_restart_title)
+                .setMessage(R.string.quick_restart_message)
+                .setPositiveButton(R.string.quick_restart_now, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface confirmation, int which) {
+                        activity.restartGame();
+                    }
+                })
+                .setNegativeButton(R.string.quick_restart_later, null)
+                .show();
     }
 
     private String[] offOn() {
