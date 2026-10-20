@@ -90,7 +90,8 @@ public final class GameActivity extends SDLActivity {
         return directory != null ? directory : getFilesDir();
     }
 
-    private void openTouchEditor() {
+    /** Touch control layout editor; also opened from the quick menu. */
+    void openTouchEditor() {
         if (editorToolbar != null) return;
         raceControls.beginEditing();
         android.widget.LinearLayout toolbar = new android.widget.LinearLayout(this);

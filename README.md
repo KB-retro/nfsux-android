@@ -31,7 +31,8 @@ sin emulador.
     inglés, y los vídeos que no estén en el idioma elegido se ven en inglés.
   - Inicio automático opcional.
 - **Escalado FSR 1.0** (AMD) con nitidez ajustable: imagen más nítida sin subir la resolución real.
-- **Menú rápido en partida** (Atrás o Select + Start): gráficos, FSR, contador de FPS, controles táctiles con mando y núcleos rápidos al momento, sin salir de la carrera.
+- **Menú rápido en partida** (Atrás o Select + Start): gráficos, FSR, contador de FPS, controles táctiles con mando, núcleos rápidos, editor de controles táctiles y créditos, al momento y sin salir de la carrera.
+- **Menús del juego como en la Xbox**: las opciones del port están en el menú rápido y en el launcher, no dentro de los menús originales.
 - **Contador de FPS** en pantalla.
 - **Copia de seguridad de partidas**: exporta e importa perfiles, progreso de
   la carrera y opciones en un `.zip`.

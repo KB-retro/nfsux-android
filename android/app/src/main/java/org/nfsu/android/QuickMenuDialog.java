@@ -116,6 +116,29 @@ final class QuickMenuDialog {
             }
         });
 
+        // Former in-game rows (Controller: TOUCH CONTROL LAYOUT, main menu: ANDROID PORT).
+        LinearLayout actions = new LinearLayout(activity);
+        actions.setPadding(0, dp(8), 0, 0);
+        Button editor = button(R.string.quick_touch_editor);
+        editor.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                dialog.dismiss();
+                activity.openTouchEditor();
+            }
+        });
+        Button credits = button(R.string.quick_credits);
+        credits.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                dialog.dismiss();
+                activity.showPortCredits();
+            }
+        });
+        LinearLayout.LayoutParams first = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        first.setMarginEnd(dp(8));
+        actions.addView(editor, first);
+        actions.addView(credits, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        panel.addView(actions);
+
         TextView note = text(R.string.quick_note, 12, 0xFF87929C);
         note.setPadding(0, dp(8), 0, 0);
         panel.addView(note);

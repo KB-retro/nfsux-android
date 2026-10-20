@@ -969,6 +969,11 @@ void sub_000192C0(void)
 #define FE_PAD_RIGHT    0xB5971BF1u
 #define ROW_HANDLER_VA  0x000C0C83u     /* + row index: int3 padding */
 #define ROW_FIRST       3               /* rows 1-2 are the game's */
+/* NFSU-X keeps the game's own menus as retail: the port's rows on Options ->
+ * Camera / Controller / Pause Controller and the "ANDROID PORT" entry in
+ * place of Trailers live in the Android quick menu and the launcher instead.
+ * 1 brings the in-game rows back. */
+#define NFSU1_PORT_MENU_ROWS 0
 #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
 
 #ifdef NFSU2_VULKAN
@@ -1339,6 +1344,7 @@ void sub_000C1FD0(void)
 {
 #ifdef __ANDROID__
     uint32_t message = MEM32(esp + 4), screen = ecx;
+    if (!NFSU1_PORT_MENU_ROWS) { sub_000C1FD0_gen(); return; }   /* retail Trailers */
     uint32_t object = MEM32(esp + 8);
     if (message == 0x0C407210u && object && MEM32(object + 0x10) == 0x8816789Fu) {
         android_show_port_credits();
@@ -1379,6 +1385,7 @@ void sub_000C2A70(void)
     int i;
 
     sub_000C2A70_gen();
+    if (!NFSU1_PORT_MENU_ROWS) return;
     for (i = 0; i < N_CAMERA_ROWS; i++) {
         int row = ROW_FIRST + i;
         PUSH32(esp, 0);                     /* no select button */
@@ -1575,7 +1582,7 @@ void sub_000B5B00(void)
 {
     uint32_t screen = ecx;
     sub_000B5B00_gen(); /* Pause Controller: retain row one, Vibration. */
-    if (!input_mode_sensor_enabled()) return;
+    if (!NFSU1_PORT_MENU_ROWS || !input_mode_sensor_enabled()) return;
     PUSH32(esp, 0); PUSH32(esp, 2);
     ecx = screen; PUSH32(esp, 0); sub_000B5390(); /* native row, no arrows */
     /* The retail pause layout draws its row title on OptionName_N too.
@@ -1587,6 +1594,7 @@ void sub_000C2B80(void)
 {
     uint32_t screen = ecx;
     sub_000C2B80_gen();
+    if (!NFSU1_PORT_MENU_ROWS) return;
     memset(s_controller_touch_rows, 0, sizeof(s_controller_touch_rows));
     for (unsigned row = 5; row <= 6; row++) {
         PUSH32(esp, 0); PUSH32(esp, 1); PUSH32(esp, row);

@@ -12,7 +12,7 @@
     <string name="launcher_region_japan">japonesa</string>
     <string name="launcher_region_other">otra</string>
     <string name="settings_title">AJUSTES</string>
-    <string name="settings_note">Se guardan para el próximo inicio del juego. Las opciones gráficas también se pueden cambiar en el juego en Options → Camera.</string>
+    <string name="settings_note">Se guardan para el próximo inicio del juego. Durante la partida, Atrás o Select + Start abren el menú rápido con las opciones gráficas.</string>
     <string name="settings_section_graphics">GRÁFICOS</string>
     <string name="settings_section_audio">SONIDO</string>
     <string name="settings_section_language">IDIOMA</string>
@@ -32,7 +32,7 @@
     <string name="settings_saved">Ajustes guardados</string>
     <string name="settings_save_failed">No se pudieron guardar los ajustes</string>
     <string name="settings_fsr_sharpness">Nitidez</string>
-    <string name="settings_fsr_hint">FSR 1.0 da una imagen más nítida cuando el juego dibuja por debajo de la resolución de la pantalla (escala 1x o 1.5x); si no, se usa FXAA. También en el juego: Options → Camera.</string>
+    <string name="settings_fsr_hint">FSR 1.0 da una imagen más nítida cuando el juego dibuja por debajo de la resolución de la pantalla (escala 1x o 1.5x); si no, se usa FXAA. También en el menú rápido durante la partida.</string>
     <string name="settings_fast_cores">Usar solo los núcleos rápidos</string>
     <string name="settings_fast_cores_hint">Experimental. Puede ayudar en perfiles de ahorro que mueven el juego a los núcleos lentos.</string>
     <string name="settings_show_fps">Mostrar contador de FPS</string>
@@ -85,4 +85,6 @@
         <item>Ocultos</item>
         <item>Visibles</item>
     </string-array>
+    <string name="quick_touch_editor">Editar controles táctiles</string>
+    <string name="quick_credits">Créditos</string>
 </resources>

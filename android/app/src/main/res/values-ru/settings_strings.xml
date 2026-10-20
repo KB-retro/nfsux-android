@@ -12,7 +12,7 @@
     <string name="launcher_region_japan">японской</string>
     <string name="launcher_region_other">другой</string>
     <string name="settings_title">НАСТРОЙКИ</string>
-    <string name="settings_note">Сохраняются до следующего запуска игры. Графику можно менять и в игре: Options → Camera.</string>
+    <string name="settings_note">Сохраняются до следующего запуска игры. Во время игры кнопка «Назад» или Select + Start открывает быстрое меню с настройками графики.</string>
     <string name="settings_section_graphics">ГРАФИКА</string>
     <string name="settings_section_audio">ЗВУК</string>
     <string name="settings_section_language">ЯЗЫК</string>
@@ -32,7 +32,7 @@
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>
     <string name="settings_fsr_sharpness">Резкость</string>
-    <string name="settings_fsr_hint">FSR 1.0 даёт более чёткую картинку, когда игра рендерит меньше разрешения экрана (масштаб 1x или 1.5x); иначе используется FXAA. Также в игре: Options → Camera.</string>
+    <string name="settings_fsr_hint">FSR 1.0 даёт более чёткую картинку, когда игра рендерит меньше разрешения экрана (масштаб 1x или 1.5x); иначе используется FXAA. Также в быстром меню во время игры.</string>
     <string name="settings_fast_cores">Только быстрые ядра процессора</string>
     <string name="settings_fast_cores_hint">Экспериментально. Может помочь в энергосберегающих профилях, которые переносят игру на медленные ядра.</string>
     <string name="settings_show_fps">Показывать счётчик FPS</string>
@@ -85,4 +85,6 @@
         <item>Скрыто</item>
         <item>Показано</item>
     </string-array>
+    <string name="quick_touch_editor">Редактор сенсорного управления</string>
+    <string name="quick_credits">Авторы</string>
 </resources>

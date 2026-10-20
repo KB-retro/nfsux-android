@@ -12,7 +12,7 @@
     <string name="launcher_region_japan">Japanese</string>
     <string name="launcher_region_other">another</string>
     <string name="settings_title">SETTINGS</string>
-    <string name="settings_note">Saved for the next start of the game. Graphics options can also be changed in game under Options → Camera.</string>
+    <string name="settings_note">Saved for the next start of the game. While playing, Back or Select + Start opens the quick menu with the graphics options.</string>
     <string name="settings_section_graphics">GRAPHICS</string>
     <string name="settings_section_audio">AUDIO</string>
     <string name="settings_section_language">LANGUAGE</string>
@@ -32,7 +32,7 @@
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
     <string name="settings_fsr_sharpness">Sharpening</string>
-    <string name="settings_fsr_hint">FSR 1.0 gives a sharper picture when the game renders below the screen size (resolution 1x or 1.5x); otherwise FXAA is used. Also in game: Options → Camera.</string>
+    <string name="settings_fsr_hint">FSR 1.0 gives a sharper picture when the game renders below the screen size (resolution 1x or 1.5x); otherwise FXAA is used. Also in the quick menu while playing.</string>
     <string name="settings_fast_cores">Use only the fast CPU cores</string>
     <string name="settings_fast_cores_hint">Experimental. Can help in power-saving profiles that move the game to the slow cores.</string>
     <string name="settings_show_fps">Show FPS counter</string>
@@ -98,4 +98,6 @@
         <item>Hidden</item>
         <item>Shown</item>
     </string-array>
+    <string name="quick_touch_editor">Edit touch controls</string>
+    <string name="quick_credits">Credits</string>
 </resources>

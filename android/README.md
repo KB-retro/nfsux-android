@@ -91,6 +91,17 @@ the same name; close the game first.
 The launcher, settings and touch-control editor are translated into English,
 Russian and Spanish and follow the system language.
 
+## Game menus kept retail
+
+`NFSU1_PORT_MENU_ROWS` (recomp_manual.c) is 0: the port's rows on Options ->
+Camera (picture options), Options -> Controller (SENSOR MODE, RACE BUTTON
+OVERLAY, TOUCH CONTROL LAYOUT), Pause -> Controller (TOUCH CONTROL LAYOUT) and
+the "ANDROID PORT" credits entry in place of Trailers are not added, so the
+game's menus look as on the Xbox. The same settings live in the quick menu
+and the launcher; the quick menu also opens the touch layout editor and the
+credits. RACE BUTTON OVERLAY keeps its default (on). Set the define to 1 to
+bring the in-game rows back.
+
 ## Quick menu
 
 Back (button or gesture) or Select + Start on a controller opens an in-game
