@@ -83,67 +83,64 @@ static void pin_fast_cores(const char *who)
         NFS_LOG_WARN("performance", "[cores] %s thread: sched_setaffinity failed\n", who);
 }
 
-static int pinned_tid(pid_t tid)
+/* Every thread of the process gets `want` (sched_setaffinity per tid). */
+static int apply_all_threads(const cpu_set_t *want)
 {
-    int n = atomic_load(&s_ntids), i;
-    if (tid == (pid_t)atomic_load(&s_renderer_tid)) return 1;
-    for (i = 0; i < n && i < MAX_THREADS; i++)
-        if (s_tids[i] == tid) return 1;
-    return 0;
+    cpu_set_t now;
+    DIR *tasks;
+    struct dirent *entry;
+    int fixed = 0;
+
+    if (!(tasks = opendir("/proc/self/task"))) return 0;
+    while ((entry = readdir(tasks)) != NULL) {
+        pid_t tid = (pid_t)atoi(entry->d_name);
+        if (tid <= 0) continue;
+        if (sched_getaffinity(tid, sizeof now, &now) == 0 && CPU_EQUAL(&now, want)) continue;
+        if (sched_setaffinity(tid, sizeof *want, want) == 0) fixed++;
+    }
+    closedir(tasks);
+    return fixed;
 }
 
-/* Leaving the app moves the process into the background cpuset and the
+/* With fast cores on, every thread runs there: on the RG477M the guest
+ * worker and audio threads, left free, were kept on the little cores after
+ * the app came back from the background (same work, ~4x the CPU time per
+ * kernel call), and the game thread waited for them at the GIL.
+ *
+ * Leaving the app moves the process into the background cpuset and the
  * kernel replaces every thread's affinity with the little cores; coming back
- * does not restore it, so all threads (audio, guest workers too) stayed on
- * the little cores. About once a second the renderer checks its own mask;
- * when it changed, every thread of the process gets its mask back: the fast
- * cores for the game and renderer threads (when enabled), all cores else. */
+ * does not restore it. About twice a second the renderer checks its own
+ * mask; when it changed, every thread gets the fast cores (when enabled) or
+ * all cores back. */
 static void repin_fast_cores(void)
 {
     static int logged;
     cpu_set_t now;
     const cpu_set_t *expected;
-    int enabled = atomic_load(&s_fast_enabled), fixed = 0;
-    DIR *tasks;
-    struct dirent *entry;
+    int fixed;
 
     pthread_once(&s_fast_once, find_fast_cores);
     if (!CPU_COUNT(&s_all)) return;
-    expected = enabled ? &s_fast : &s_all;
+    expected = atomic_load(&s_fast_enabled) ? &s_fast : &s_all;
     if (sched_getaffinity(0, sizeof now, &now) != 0 || CPU_EQUAL(&now, expected)) return;
-    if (!(tasks = opendir("/proc/self/task"))) return;
-    while ((entry = readdir(tasks)) != NULL) {
-        pid_t tid = (pid_t)atoi(entry->d_name);
-        const cpu_set_t *want;
-        if (tid <= 0) continue;
-        want = enabled && pinned_tid(tid) ? &s_fast : &s_all;
-        if (sched_getaffinity(tid, sizeof now, &now) == 0 && CPU_EQUAL(&now, want)) continue;
-        if (sched_setaffinity(tid, sizeof *want, want) == 0) fixed++;
-    }
-    closedir(tasks);
+    fixed = apply_all_threads(expected);
     if (fixed && logged < 20) {
         logged++;
         NFS_LOG_INFO("performance", "[cores] back from the background: %d thread(s) given their cores again\n", fixed);
     }
 }
 
-/* Quick menu switch: pin the game and renderer threads to the fast cores,
- * or let them run on every core again. */
+/* Quick menu switch: every thread to the fast cores, or all cores again. */
 void android_perf_hint_set_fast_cores(int on)
 {
-    const cpu_set_t *set;
-    int n, i;
+    int fixed;
 
     pthread_once(&s_fast_once, find_fast_cores);
     on = on && s_fast_count > 0;
     atomic_store(&s_fast_enabled, on);
-    set = on ? &s_fast : &s_all;
-    n = atomic_load(&s_ntids);
-    for (i = -1; i < n && i < MAX_THREADS; i++) {
-        pid_t tid = i < 0 ? (pid_t)atomic_load(&s_renderer_tid) : s_tids[i];
-        if (tid > 0) sched_setaffinity(tid, sizeof *set, set);
-    }
-    NFS_LOG_INFO("performance", "[cores] fast cores %s from the quick menu\n", on ? "on" : "off");
+    fixed = apply_all_threads(on ? &s_fast : &s_all);
+    NFS_LOG_INFO("performance", "[cores] fast cores %s from the quick menu (%d threads)\n",
+            on ? "on" : "off", fixed);
 }
 
 void android_perf_hint_add_thread(void)
@@ -179,6 +176,9 @@ static void start_session(void)
     s_state = -1;
     atomic_store(&s_renderer_tid, (int)syscall(SYS_gettid));
     pin_fast_cores("renderer");
+    if (atomic_load(&s_fast_enabled))
+        NFS_LOG_INFO("performance", "[cores] %d other thread(s) moved to the fast cores\n",
+                apply_all_threads(&s_fast));
     if (e && e[0] == '0') {
         NFS_LOG_INFO("performance", "[perfhint] off (RECOMP_PERF_HINT=0)\n");
         return;

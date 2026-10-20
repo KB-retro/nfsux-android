@@ -128,14 +128,18 @@ the 30 or 60 FPS target, so power-saving CPU profiles raise clocks when frames
 run late. Older Android versions skip it; `RECOMP_PERF_HINT=0` turns it off.
 The `[perfhint]` line in `logs/performance.log` says whether a session started.
 `RECOMP_FAST_CORES=1` (launcher: "Use only the fast CPU cores", off by
-default) pins the game and renderer threads to the cores whose maximum
-frequency is at least 80% of the fastest, read from sysfs; `[cores]` lines in
+default) pins every thread of the process to the cores whose maximum
+frequency is at least 80% of the fastest, read from sysfs. Pinning only the
+game and renderer threads was not enough on the RG477M: after a return from
+the background the guest worker and audio threads did the same work at ~4x
+the CPU time per kernel call (little cores) and the game thread waited for
+them at the GIL; `[cores]` lines in
 `logs/performance.log` show the result. Meant for power-saving profiles that
 move the game onto little cores. Going to the background also replaces every
 thread's affinity with the little cores and returning does not restore it;
 about twice a second the renderer checks its own mask and, when it changed,
-gives every thread in `/proc/self/task` its mask back (fast cores for the
-game and renderer threads when enabled, all cores otherwise).
+gives every thread in `/proc/self/task` its mask back (fast cores when
+enabled, all cores otherwise).
 The CI build compiles the lifted code with `-Pnfsu.genOpt=-O2`, the level used
 for the device measurements in `docs/performance-counters.md`.
 
