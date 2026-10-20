@@ -58,7 +58,6 @@ public final class SettingsActivity extends Activity {
             Math.max(0, Math.min(2, settings.option("fxaa", 1))));
         fsrSharpness = choice(R.string.settings_fsr_sharpness, R.array.settings_fsr_sharpness_levels,
             Math.max(0, Math.min(2, settings.option("fsr_sharpness", 1))));
-        hint(R.string.settings_fsr_hint);
         aniso = choice(R.string.settings_aniso, R.array.settings_aniso_levels,
             LauncherSettings.indexOf(LauncherSettings.ANISO, settings.option("aniso", 16), 4));
         reflections = toggle(R.string.settings_reflections, settings.option("reflections", 1) != 0);
@@ -78,7 +77,6 @@ public final class SettingsActivity extends Activity {
         section(R.string.settings_section_language);
         language = choice(R.string.settings_language, R.array.settings_languages,
             LauncherSettings.indexOf(LauncherSettings.LANGUAGES, settings.envValue("RECOMP_LANGUAGE", 5), 0));
-        hint(R.string.settings_language_hint);
 
         section(R.string.settings_section_saves);
         action(R.string.settings_export_saves, new View.OnClickListener() {

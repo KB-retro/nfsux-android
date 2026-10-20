@@ -6,7 +6,7 @@
     <string name="launcher_ready_title">ВСЁ ГОТОВО К ГОНКЕ</string>
     <string name="launcher_ready_description">Файлы игры найдены. Настройте игру или начните гонку.</string>
     <string name="launcher_ready_status">Настройки применяются при следующем запуске игры.</string>
-    <string name="launcher_auto_starting">Запуск игры… Откройте настройки, чтобы остановить.</string>
+    <string name="launcher_auto_starting">Запуск игры… Нажмите любую кнопку или коснитесь экрана, чтобы отменить.</string>
     <string name="launcher_other_release">НЕПОДДЕРЖИВАЕМАЯ ВЕРСИЯ ИГРЫ\nЭтот default.xbe из версии %1$s. APK содержит код, перекомпилированный из североамериканского (NTSC-U) default.xbe, и запускает только его. Положите в папку default.xbe NTSC-U; остальные файлы диска можно взять из вашей версии (экспериментально). Затем выберите язык игры в настройках.</string>
     <string name="launcher_region_pal">европейской (PAL)</string>
     <string name="launcher_region_japan">японской</string>
@@ -27,12 +27,10 @@
     <string name="settings_aspect">Формат изображения</string>
     <string name="settings_volume">Общая громкость</string>
     <string name="settings_language">Язык игры</string>
-    <string name="settings_language_hint">Тексты игры будут на этом языке. Озвучка остаётся на английском.</string>
     <string name="settings_auto_start">Запускать игру автоматически</string>
     <string name="settings_saved">Настройки сохранены</string>
     <string name="settings_save_failed">Не удалось сохранить настройки</string>
     <string name="settings_fsr_sharpness">Резкость</string>
-    <string name="settings_fsr_hint">FSR 1.0 даёт более чёткую картинку, когда игра рендерит меньше разрешения экрана (масштаб 1x или 1.5x); иначе используется FXAA. Также в быстром меню во время игры.</string>
     <string name="settings_fast_cores">Только быстрые ядра процессора</string>
     <string name="settings_fast_cores_hint">Экспериментально. Может помочь в энергосберегающих профилях, которые переносят игру на медленные ядра.</string>
     <string name="settings_show_fps">Показывать счётчик FPS</string>

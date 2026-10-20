@@ -180,6 +180,38 @@ public final class LauncherActivity extends Activity {
         return getString(R.string.launcher_region_other);
     }
 
+    /** A touch, key or controller button during the auto-start countdown only cancels it. */
+    private boolean cancelAutoStart() {
+        if (!handler.hasCallbacks(autoStart)) return false;
+        handler.removeCallbacks(autoStart);
+        if (status != null) status.setText(R.string.launcher_ready_status);
+        return true;
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent event) {
+        if (event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN && cancelAutoStart()) return true;
+        return super.dispatchTouchEvent(event);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN && cancelAutoStart()) return true;
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+        // Sticks and triggers: only a clear push, not stick drift.
+        if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK)
+                && (Math.abs(event.getAxisValue(android.view.MotionEvent.AXIS_X)) > 0.5f
+                    || Math.abs(event.getAxisValue(android.view.MotionEvent.AXIS_Y)) > 0.5f
+                    || Math.abs(event.getAxisValue(android.view.MotionEvent.AXIS_HAT_X)) > 0.5f
+                    || Math.abs(event.getAxisValue(android.view.MotionEvent.AXIS_HAT_Y)) > 0.5f)
+                && cancelAutoStart()) return true;
+        return super.dispatchGenericMotionEvent(event);
+    }
+
     @Override
     protected void onPause() {
         // Leaving the launcher (settings, another app) cancels a pending auto-start.

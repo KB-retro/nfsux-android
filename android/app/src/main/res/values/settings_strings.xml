@@ -6,7 +6,7 @@
     <string name="launcher_ready_title">READY TO RACE</string>
     <string name="launcher_ready_description">Game files found. Adjust the settings or start the game.</string>
     <string name="launcher_ready_status">Settings apply the next time the game starts.</string>
-    <string name="launcher_auto_starting">Starting the game… Open Settings to stop.</string>
+    <string name="launcher_auto_starting">Starting the game… Press any button or touch the screen to cancel.</string>
     <string name="launcher_other_release">UNSUPPORTED GAME VERSION\nThis default.xbe is from the %1$s release. This APK runs code recompiled from the North American (NTSC-U) default.xbe and can only start that file. Place the NTSC-U default.xbe in the folder; the other disc files may come from your own release (experimental). Then choose the game language in Settings.</string>
     <string name="launcher_region_pal">European (PAL)</string>
     <string name="launcher_region_japan">Japanese</string>
@@ -27,12 +27,10 @@
     <string name="settings_aspect">Picture format</string>
     <string name="settings_volume">Master volume</string>
     <string name="settings_language">Game language</string>
-    <string name="settings_language_hint">The game texts use this language. Speech stays in English.</string>
     <string name="settings_auto_start">Start the game automatically</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_save_failed">Could not save the settings</string>
     <string name="settings_fsr_sharpness">Sharpening</string>
-    <string name="settings_fsr_hint">FSR 1.0 gives a sharper picture when the game renders below the screen size (resolution 1x or 1.5x); otherwise FXAA is used. Also in the quick menu while playing.</string>
     <string name="settings_fast_cores">Use only the fast CPU cores</string>
     <string name="settings_fast_cores_hint">Experimental. Can help in power-saving profiles that move the game to the slow cores.</string>
     <string name="settings_show_fps">Show FPS counter</string>

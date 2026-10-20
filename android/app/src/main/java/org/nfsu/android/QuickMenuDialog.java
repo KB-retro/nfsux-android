@@ -114,26 +114,26 @@ final class QuickMenuDialog {
         });
 
         addRestartRows();
-        addRow(activity.getString(R.string.settings_touch_with_controller), new Row() {
-            @Override public String[] values() {
-                return activity.getResources().getStringArray(R.array.settings_touch_with_controller_modes);
-            }
-            @Override public int get() { return GameActivity.nativeTouchWithController() ? 1 : 0; }
-            @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
-        });
-
-        // Former in-game row (Controller: TOUCH CONTROL LAYOUT), under the touch controls row.
-        Button editor = button(R.string.quick_touch_editor);
+        // Gear after the label: the touch layout editor (former in-game TOUCH CONTROL LAYOUT).
+        android.widget.ImageButton editor = new android.widget.ImageButton(activity);
+        editor.setImageResource(R.drawable.ic_quick_gear);
+        editor.setBackgroundColor(Color.TRANSPARENT);
+        editor.setPadding(dp(8), dp(8), dp(8), dp(8));
+        editor.setFocusable(false);      // touch tool; the row keeps the controller focus
+        editor.setContentDescription(activity.getString(R.string.quick_touch_editor));
         editor.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) {
                 dialog.dismiss();
                 activity.openTouchEditor();
             }
         });
-        LinearLayout.LayoutParams editorParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        editorParams.setMargins(dp(8), dp(2), dp(4), dp(4));
-        rows.addView(editor, editorParams);
+        addRow(activity.getString(R.string.settings_touch_with_controller), new Row() {
+            @Override public String[] values() {
+                return activity.getResources().getStringArray(R.array.settings_touch_with_controller_modes);
+            }
+            @Override public int get() { return GameActivity.nativeTouchWithController() ? 1 : 0; }
+            @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
+        }, editor);
 
         // Continue bottom left (green), Exit bottom right (red).
         LinearLayout buttons = new LinearLayout(activity);
@@ -284,6 +284,11 @@ final class QuickMenuDialog {
     }
 
     private void addRow(String label, final Row row) {
+        addRow(label, row, null);
+    }
+
+    /** extra: shown right after the label (the touch row's gear). */
+    private void addRow(String label, final Row row, View extra) {
         final LinearLayout line = new LinearLayout(activity);
         line.setGravity(Gravity.CENTER_VERTICAL);
         line.setMinimumHeight(dp(44));
@@ -300,7 +305,14 @@ final class QuickMenuDialog {
         name.setText(label);
         name.setTextColor(Color.WHITE);
         name.setTextSize(15);
-        line.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        if (extra == null) {
+            line.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        } else {
+            line.addView(name, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            line.addView(extra, new LinearLayout.LayoutParams(dp(40), dp(40)));
+            line.addView(new View(activity), new LinearLayout.LayoutParams(0, 1, 1));
+        }
 
         final TextView value = new TextView(activity);
         value.setTextColor(0xFFB8E9F5);
