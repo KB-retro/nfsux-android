@@ -4,6 +4,7 @@
 #define _GNU_SOURCE
 #include "../xboxrecomp/include/nfsu_log.h"
 #include "android_perf_hint.h"
+#include <dirent.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #include <sched.h>
@@ -82,25 +83,47 @@ static void pin_fast_cores(const char *who)
         NFS_LOG_WARN("performance", "[cores] %s thread: sched_setaffinity failed\n", who);
 }
 
-/* Leaving the app moves the process into the background cpuset, and the
- * kernel then replaces the threads' affinity with the little cores; coming
- * back does not restore it. Check about once a second and pin again. */
+static int pinned_tid(pid_t tid)
+{
+    int n = atomic_load(&s_ntids), i;
+    if (tid == (pid_t)atomic_load(&s_renderer_tid)) return 1;
+    for (i = 0; i < n && i < MAX_THREADS; i++)
+        if (s_tids[i] == tid) return 1;
+    return 0;
+}
+
+/* Leaving the app moves the process into the background cpuset and the
+ * kernel replaces every thread's affinity with the little cores; coming back
+ * does not restore it, so all threads (audio, guest workers too) stayed on
+ * the little cores. About once a second the renderer checks its own mask;
+ * when it changed, every thread of the process gets its mask back: the fast
+ * cores for the game and renderer threads (when enabled), all cores else. */
 static void repin_fast_cores(void)
 {
     static int logged;
     cpu_set_t now;
-    int n = atomic_load(&s_ntids), i, fixed = 0;
-    pid_t self = (pid_t)syscall(SYS_gettid);
+    const cpu_set_t *expected;
+    int enabled = atomic_load(&s_fast_enabled), fixed = 0;
+    DIR *tasks;
+    struct dirent *entry;
 
-    if (!atomic_load(&s_fast_enabled)) return;
-    for (i = -1; i < n && i < MAX_THREADS; i++) {
-        pid_t tid = i < 0 ? self : s_tids[i];
-        if (sched_getaffinity(tid, sizeof now, &now) != 0 || CPU_EQUAL(&now, &s_fast)) continue;
-        if (sched_setaffinity(tid, sizeof s_fast, &s_fast) == 0) fixed++;
+    pthread_once(&s_fast_once, find_fast_cores);
+    if (!CPU_COUNT(&s_all)) return;
+    expected = enabled ? &s_fast : &s_all;
+    if (sched_getaffinity(0, sizeof now, &now) != 0 || CPU_EQUAL(&now, expected)) return;
+    if (!(tasks = opendir("/proc/self/task"))) return;
+    while ((entry = readdir(tasks)) != NULL) {
+        pid_t tid = (pid_t)atoi(entry->d_name);
+        const cpu_set_t *want;
+        if (tid <= 0) continue;
+        want = enabled && pinned_tid(tid) ? &s_fast : &s_all;
+        if (sched_getaffinity(tid, sizeof now, &now) == 0 && CPU_EQUAL(&now, want)) continue;
+        if (sched_setaffinity(tid, sizeof *want, want) == 0) fixed++;
     }
+    closedir(tasks);
     if (fixed && logged < 20) {
         logged++;
-        NFS_LOG_INFO("performance", "[cores] %d thread(s) pinned again to the fast cores\n", fixed);
+        NFS_LOG_INFO("performance", "[cores] back from the background: %d thread(s) given their cores again\n", fixed);
     }
 }
 
@@ -190,7 +213,7 @@ void android_perf_hint_frame(void)
     if (s_state == 0) start_session();
     {
         static int frames;
-        if (++frames % 60 == 0) repin_fast_cores();
+        if (++frames % 30 == 0) repin_fast_cores();
     }
     if (s_state != 1) return;
     target = atomic_load(&s_target_ns);

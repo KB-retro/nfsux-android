@@ -131,7 +131,11 @@ The `[perfhint]` line in `logs/performance.log` says whether a session started.
 default) pins the game and renderer threads to the cores whose maximum
 frequency is at least 80% of the fastest, read from sysfs; `[cores]` lines in
 `logs/performance.log` show the result. Meant for power-saving profiles that
-move the game onto little cores; not measured yet.
+move the game onto little cores. Going to the background also replaces every
+thread's affinity with the little cores and returning does not restore it;
+about twice a second the renderer checks its own mask and, when it changed,
+gives every thread in `/proc/self/task` its mask back (fast cores for the
+game and renderer threads when enabled, all cores otherwise).
 The CI build compiles the lifted code with `-Pnfsu.genOpt=-O2`, the level used
 for the device measurements in `docs/performance-counters.md`.
 
