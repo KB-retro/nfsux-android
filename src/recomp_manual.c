@@ -969,11 +969,12 @@ void sub_000192C0(void)
 #define FE_PAD_RIGHT    0xB5971BF1u
 #define ROW_HANDLER_VA  0x000C0C83u     /* + row index: int3 padding */
 #define ROW_FIRST       3               /* rows 1-2 are the game's */
-/* NFSU-X keeps the game's own menus as retail: the port's rows on Options ->
- * Camera / Controller / Pause Controller and the "ANDROID PORT" entry in
- * place of Trailers live in the Android quick menu and the launcher instead.
- * 1 brings the in-game rows back. */
+/* NFSU-X keeps the game's own option screens as retail: the port's rows on
+ * Options -> Camera / Controller / Pause Controller live in the Android quick
+ * menu and the launcher instead. 1 brings the in-game rows back. */
 #define NFSU1_PORT_MENU_ROWS 0
+/* Main menu: a CREDITS entry (port credits dialog) in place of Trailers. */
+#define NFSU1_PORT_CREDITS_ROW 1
 #define ENVMAP_VIEW(id) (0x002C5F20u + (uint32_t)(id) * 0x60u)
 
 #ifdef NFSU2_VULKAN
@@ -1325,11 +1326,21 @@ extern void sub_000C1FD0_gen(void);
 #ifdef __ANDROID__
 extern void android_show_port_credits(void);
 extern void sub_000DC410(void);
+/* In the game's language (RECOMP_LANGUAGE, see sub_00011190). */
+static const char *port_credits_label(void)
+{
+    const char *e = getenv("RECOMP_LANGUAGE");
+    switch (e ? atoi(e) : 1) {
+    case 5: return "CREDITOS";
+    case 6: return "CREDITI";
+    default: return "CREDITS";
+    }
+}
 static void port_credits_caption(uint32_t object, unsigned depth)
 {
     if (!object || depth > 8) return;
     if (MEM32(object + 0x18) == 2) {
-        PUSH32(esp, 0); PUSH32(esp, guest_str("ANDROID PORT"));
+        PUSH32(esp, 0); PUSH32(esp, guest_str(port_credits_label()));
         PUSH32(esp, object); PUSH32(esp, ROW_HANDLER_VA);
         sub_000DC410();
         esp += 12;
@@ -1344,7 +1355,7 @@ void sub_000C1FD0(void)
 {
 #ifdef __ANDROID__
     uint32_t message = MEM32(esp + 4), screen = ecx;
-    if (!NFSU1_PORT_MENU_ROWS) { sub_000C1FD0_gen(); return; }   /* retail Trailers */
+    if (!NFSU1_PORT_CREDITS_ROW) { sub_000C1FD0_gen(); return; }   /* retail Trailers */
     uint32_t object = MEM32(esp + 8);
     if (message == 0x0C407210u && object && MEM32(object + 0x10) == 0x8816789Fu) {
         android_show_port_credits();

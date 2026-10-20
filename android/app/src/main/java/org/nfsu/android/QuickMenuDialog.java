@@ -122,9 +122,7 @@ final class QuickMenuDialog {
             @Override public void set(int value) { GameActivity.nativeSetTouchWithController(value == 1); }
         });
 
-        // Former in-game rows (Controller: TOUCH CONTROL LAYOUT, main menu: ANDROID PORT).
-        LinearLayout actions = new LinearLayout(activity);
-        actions.setPadding(0, dp(8), 0, 0);
+        // Former in-game row (Controller: TOUCH CONTROL LAYOUT), under the touch controls row.
         Button editor = button(R.string.quick_touch_editor);
         editor.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) {
@@ -132,37 +130,27 @@ final class QuickMenuDialog {
                 activity.openTouchEditor();
             }
         });
-        Button credits = button(R.string.quick_credits);
-        credits.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View view) {
-                dialog.dismiss();
-                activity.showPortCredits();
-            }
-        });
-        LinearLayout.LayoutParams first = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-        first.setMarginEnd(dp(8));
-        actions.addView(editor, first);
-        actions.addView(credits, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-        panel.addView(actions);
+        LinearLayout.LayoutParams editorParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        editorParams.setMargins(dp(8), dp(2), dp(4), dp(4));
+        rows.addView(editor, editorParams);
 
-        TextView note = text(R.string.quick_note, 12, 0xFF87929C);
-        note.setPadding(0, dp(8), 0, 0);
-        panel.addView(note);
-
+        // Continue bottom left (green), Exit bottom right (red).
         LinearLayout buttons = new LinearLayout(activity);
         buttons.setPadding(0, dp(10), 0, 0);
-        Button exit = button(R.string.quick_exit);
-        exit.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View view) { confirmExit(); }
-        });
-        Button resume = button(R.string.quick_resume);
+        Button resume = small(R.string.quick_resume, 0xFF2E7D32, 0xFF43A047);
         resume.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { close(); }
         });
-        LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-        half.setMarginEnd(dp(8));
-        buttons.addView(exit, half);
-        buttons.addView(resume, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        Button exit = small(R.string.quick_exit, 0xFFB71C1C, 0xFFE53935);
+        exit.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { confirmExit(); }
+        });
+        LinearLayout.LayoutParams wrap = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(38));
+        buttons.addView(resume, wrap);
+        buttons.addView(new View(activity), new LinearLayout.LayoutParams(0, 1, 1));
+        buttons.addView(exit, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(38)));
         panel.addView(buttons);
 
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -383,6 +371,33 @@ final class QuickMenuDialog {
         button.setText(res);
         button.setAllCaps(false);
         return button;
+    }
+
+    /** Compact coloured button; lighter with controller focus or when pressed. */
+    private Button small(int res, int color, int focused) {
+        Button button = button(res);
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(14);
+        button.setMinWidth(dp(120));
+        button.setMinimumWidth(dp(120));
+        button.setMinHeight(0);
+        button.setMinimumHeight(0);
+        button.setPadding(dp(16), 0, dp(16), 0);
+        StateListDrawable background = new StateListDrawable();
+        background.addState(new int[] {android.R.attr.state_focused}, shape(focused, Color.WHITE));
+        background.addState(new int[] {android.R.attr.state_pressed}, shape(focused, focused));
+        background.addState(new int[0], shape(color, color));
+        button.setBackground(background);
+        button.setStateListAnimator(null);
+        return button;
+    }
+
+    private GradientDrawable shape(int fill, int stroke) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(fill);
+        shape.setStroke(dp(2), stroke);
+        shape.setCornerRadius(dp(4));
+        return shape;
     }
 
     private void confirmExit() {

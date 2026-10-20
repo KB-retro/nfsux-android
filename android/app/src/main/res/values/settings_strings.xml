@@ -88,7 +88,6 @@
     <string name="quick_resume">Resume</string>
     <string name="quick_exit">Exit game</string>
     <string name="quick_exit_confirm">Progress that has not been saved will be lost.</string>
-    <string name="quick_note">Language and picture format apply after a restart. Open this menu with Back or Select + Start.</string>
     <string-array name="settings_off_on">
         <item>Off</item>
         <item>On</item>
@@ -99,7 +98,6 @@
         <item>Shown</item>
     </string-array>
     <string name="quick_touch_editor">Edit touch controls</string>
-    <string name="quick_credits">Credits</string>
     <string name="settings_saves_exporting">Exporting saves…</string>
     <string name="settings_saves_importing">Importing saves…</string>
     <string name="quick_restart_title">Restart needed</string>

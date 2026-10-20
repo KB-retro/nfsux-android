@@ -75,7 +75,6 @@
     <string name="quick_resume">Продолжить</string>
     <string name="quick_exit">Выйти из игры</string>
     <string name="quick_exit_confirm">Несохранённый прогресс будет потерян.</string>
-    <string name="quick_note">Язык и формат изображения применяются после перезапуска. Это меню открывается кнопкой «Назад» или Select + Start.</string>
     <string-array name="settings_off_on">
         <item>Выкл.</item>
         <item>Вкл.</item>
@@ -86,7 +85,6 @@
         <item>Показано</item>
     </string-array>
     <string name="quick_touch_editor">Редактор сенсорного управления</string>
-    <string name="quick_credits">Авторы</string>
     <string name="settings_saves_exporting">Экспорт сохранений…</string>
     <string name="settings_saves_importing">Импорт сохранений…</string>
     <string name="quick_restart_title">Нужен перезапуск</string>
